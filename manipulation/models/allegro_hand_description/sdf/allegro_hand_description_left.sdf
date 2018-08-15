@@ -41,6 +41,8 @@
         </geometry>
       </visual>
     </link>
+
+    
     <link name='link_8'>
       <pose frame=''>0 0.0435 0.093458 -0.087267 0 0</pose>
       <inertial>
@@ -77,7 +79,7 @@
       <child>link_8</child>
       <parent>hand_root</parent>
       <axis>
-        <xyz>0 0.087156 0.996195</xyz>
+        <xyz>0 -0.087156 -0.996195</xyz>
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
@@ -529,7 +531,7 @@
       <child>link_4</child>
       <parent>hand_root</parent>
       <axis>
-        <xyz>0 0 1</xyz>
+        <xyz>0 0 -1</xyz>
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
@@ -754,7 +756,7 @@
       <child>link_0</child>
       <parent>hand_root</parent>
       <axis>
-        <xyz>0 -0.087156 0.996195</xyz>
+        <xyz>0 0.087156 -0.996195</xyz>
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>

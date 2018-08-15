@@ -23,19 +23,11 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
     (*Kd)[i] = 5e-2;
   }
   *Ki = Eigen::VectorXd::Zero(kAllegroNumJoints);
-  // Kp->segment<4>(4).setConstant(0.5);
-  // Kd->segment<4>(0).setZero();
 }
 
 
 void GetControlPortMapping(multibody::multibody_plant::MultibodyPlant<double>& plant, 
                            MatrixX<double>& Px, MatrixX<double>& Py) {
-  #if 1
-  // Actuation matrix.
-  MatrixX<double> B = plant.model().actuation_map_matrix();
-  std::cout<<B<<std::endl;
-  #endif
-
   // Create a map from fingers dofs in a "desired order" into the order these
   // same dofs are arranged in the state vector.
   // This is the projection matrix Px for the PID controller.
@@ -124,13 +116,14 @@ void GetControlPortMapping(multibody::multibody_plant::MultibodyPlant<double>& p
 
 const Eigen::VectorXd SetTargetJointPose(){
   Eigen::VectorXd const_pos = Eigen::VectorXd::Zero(kAllegroNumJoints * 2) ;
-  const_pos(1)=0.3;
-  const_pos(2)=0.4;
+  const_pos(0)=0.8;
+  const_pos(1)=1.1;
+  const_pos(2)=1;
 
-  const_pos(4) = 0.8;
+  const_pos(4) = 0.5;
   const_pos(6) = 0.5;
 
-  const_pos(13) = 0.5;
+  const_pos(12) = 0.2;
 
 
   return const_pos;

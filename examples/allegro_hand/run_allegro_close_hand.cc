@@ -57,17 +57,9 @@ DEFINE_double(max_time_step, 1.0e-4,
               "If negative, a value based on parameter penetration_allowance "
               "is used.");
 
-// Integration parameters:
-DEFINE_string(integration_scheme, "semi_explicit_euler",
-              "Integration scheme to be used. Available options are: "
-              "'semi_explicit_euler','runge_kutta2','runge_kutta3',"
-              "'implicit_euler'");
-
 DEFINE_bool(add_gravity, false, "Whether adding gravity in the simulation");
 
-DEFINE_double(accuracy, 1.0e-2, "Sets the simulation accuracy for variable step"
-              "size integrators with error control.");
-DEFINE_double(target_realtime_rate, 0.1,
+DEFINE_double(target_realtime_rate, 1,
               "Desired rate relative to real time.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
 
@@ -183,9 +175,6 @@ int DoMain() {
   // systems::Context<double>& plant_context =
   //     diagram->GetMutableSubsystemContext(plant, diagram_context.get());
 
-
- 
-
   // Set up simulator. Using semi_explicit_euler for now.
   const double max_time_step = FLAGS_max_time_step > 0 ? 
       FLAGS_max_time_step : plant.get_contact_penalty_method_time_scale() / 30;
@@ -196,18 +185,20 @@ int DoMain() {
             *diagram, max_time_step, &simulator.get_mutable_context());
   integrator->set_maximum_step_size(max_time_step);
   if (!integrator->get_fixed_step_mode())
-    integrator->set_target_accuracy(FLAGS_accuracy);
+    integrator->set_target_accuracy(1e-2);
 
   simulator.set_publish_every_time_step(true);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.Initialize();
   simulator.StepTo(FLAGS_simulation_time);
 
-  // for(long int i=0; i<= pid_state->data().cols(); i+=40)
-  //   std::cout<<pid_state->data().col(i).transpose()<<"      "<<
-  //     plant_state->data().col(i).transpose()<<std::endl;
-  // std::cout<<pid_state->data().cols()<<std::endl;
-    std::cout<<pid_state->data().rows()<<std::endl;
+  std::cout<<"Output the final joint positions of the hand:"<<std::endl;
+
+  // print the status of the joints
+  int print_slice = 100;  //  print every X signals
+  for(long int i=0; i<= plant_state->data().cols(); i += print_slice)
+      std::cout<< (Px * plant_state->data().col(i)).transpose().segment<
+        kAllegroNumJoints>(0)  << std::endl;
 
   return 1;
 }  // int main

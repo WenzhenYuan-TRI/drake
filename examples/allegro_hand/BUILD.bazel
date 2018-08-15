@@ -95,10 +95,3 @@ drake_cc_binary(
         "@gflags",
     ],
 )
-
-drake_cc_binary(
-    name = "test_eigen",
-    srcs = ["test_eigen.cc"],
-    deps = ["//common",
-    ],
-)

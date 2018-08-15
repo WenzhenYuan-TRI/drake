@@ -36,14 +36,11 @@
         </geometry>
       </visual>
     </link>
-
     <joint name='weld_base' type='fixed' drake_ignore='true'>
       <parent>world</parent>
       <child>hand_root</child>
       <pose>0 0 0 0 0 0</pose>
     </joint>
-
-
 
     <link name='link_0'>
       <pose frame=''>0 0.0435 0.093458 -0.087267 0 0</pose>
@@ -110,8 +107,7 @@
           <iyz>2.41313e-050</iyz>
           <izz>7.95654e-05</izz>
         </inertia>
-      </inertial>
-      
+      </inertial>      
       <collision name='link_1_collision'>
         <pose frame=''>0 0 0.027 0 -0 0</pose>
         <geometry>
@@ -367,7 +363,7 @@
       <child>link_13</child>
       <parent>link_12</parent>
       <axis>
-        <xyz>-0 0.996195 -0.087156</xyz>
+        <xyz>0 0.996195 -0.087156</xyz>
         <limit>
           <lower>-0.105</lower>
           <upper>1.163</upper>
