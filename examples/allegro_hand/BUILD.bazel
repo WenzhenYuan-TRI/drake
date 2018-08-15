@@ -18,6 +18,7 @@ drake_cc_library(
     hdrs = ["allegro_common.h"],
     deps = [
         "//multibody:inverse_kinematics",
+        "//multibody/multibody_tree/multibody_plant",
         "//multibody/parsers",
     ],
 )
@@ -92,5 +93,12 @@ drake_cc_binary(
         "//systems/rendering:pose_bundle_to_draw_message",
         "//systems/lcm:lcm_pubsub_system",
         "@gflags",
+    ],
+)
+
+drake_cc_binary(
+    name = "test_eigen",
+    srcs = ["test_eigen.cc"],
+    deps = ["//common",
     ],
 )

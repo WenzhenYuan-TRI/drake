@@ -32,6 +32,9 @@
 #include "drake/systems/primitives/signal_logger.h"
 #include "drake/systems/rendering/pose_bundle_to_draw_message.h"
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
 namespace drake {
 
 
@@ -53,12 +56,6 @@ DEFINE_double(max_time_step, 1.0e-4,
               "Maximum time step used for the integrators. [s]. "
               "If negative, a value based on parameter penetration_allowance "
               "is used.");
-
-// Contact parameters
-DEFINE_double(penetration_allowance, 2.0e-3, "Penetration allowance [m]. "
-              "See MultibodyPlant::set_penetration_allowance().");
-DEFINE_double(v_stiction_tolerance, 1.0e-2,
-              "The maximum slipping speed allowed during stiction. [m/s]");
 
 // Integration parameters:
 DEFINE_string(integration_scheme, "semi_explicit_euler",
@@ -97,8 +94,10 @@ int DoMain() {
       multibody::UniformGravityFieldElement>(-9.81 * Eigen::Vector3d::UnitZ());
 
   plant.Finalize(&scene_graph);
-  plant.set_penetration_allowance(FLAGS_penetration_allowance);
-  plant.set_stiction_tolerance(FLAGS_v_stiction_tolerance);
+  plant.set_penetration_allowance(2e-2);  /* in [m] */
+  /* The maximum slipping speed allowed during stiction. [m/s]*/
+  plant.set_stiction_tolerance(1e-2);  
+      
 
   // visualization of the hand model
   const systems::rendering::PoseBundleToDrawMessage& converter =
@@ -119,51 +118,33 @@ int DoMain() {
   std::cout<< "Model added \n";
 
 
-  // Add the position controller
-  auto tree_rigidbody = std::make_unique<RigidBodyTree<double>>();
-  parsers::sdf::AddModelInstancesFromSdfFile(FindResourceOrThrow(HandSdfPath),
-       multibody::joints::kFixed, nullptr, tree_rigidbody.get());
-
-  std::cout<< "rigid tree added \n";
-
   VectorX<double> kp, kd, ki;
-  // auto state_projection = GetControllerInputStateProjectionMat();
-  SetPositionControlledIiwaGains(&kp, &ki, &kd);
-
+  MatrixX<double> Px, Py;
+  GetControlPortMapping(plant, Px, Py);
+  SetPositionControlledGains(&kp, &ki, &kd);
   // auto controller = builder.AddSystem<
   //     systems::controllers::InverseDynamicsController>(
   //     std::move(tree_rigidbody), kp, ki, kd,
   //     false /* no feedforward acceleration */);
   auto controller = builder.AddSystem<
-      systems::controllers::PidController>(GetControllerInputStateProjectionMat(),
-      kp, ki, kd);
-
-  std::cout<< "controller built\n";
-
+      systems::controllers::PidController>(Px, Py, kp, ki, kd);
   builder.Connect(plant.get_continuous_state_output_port(),
-                  controller->get_input_port_estimated_state());
+                 controller->get_input_port_estimated_state());
   builder.Connect(controller->get_output_port_control(),
-                  plant.get_actuation_input_port());
+                 plant.get_actuation_input_port());
 
   std::cout<< "controller connected \n";
 
   // Wire up trajectory
-  // Eigen::VectorXd const_pos = Eigen::VectorXd::Zero(kAllegroNumJoints * 2) ;
-  // const_pos(1)=0.5;
-  // const_pos(2)=0.4;
-  // auto X = SetTargetJointPose();
   systems::ConstantVectorSource<double>* const_src =
       builder.AddSystem<systems::ConstantVectorSource<double>>( //const_pos);
       SetTargetJointPose());
-  // std::cout<<X<<std::endl<<std::endl;
   const_src->set_name("constant_source");
   builder.Connect(const_src->get_output_port(),
-                  controller->get_input_port_desired_state());
+                 controller->get_input_port_desired_state());
 
   std::cout<<"trajectory added \n";
 
-
-// -------------------------
   // Publish contact results for visualization.
   const auto& contact_results_to_lcm =
       *builder.AddSystem<multibody::multibody_plant::ContactResultsToLcmSystem>
@@ -187,9 +168,6 @@ int DoMain() {
                   pid_state->get_input_port());
   builder.Connect(plant.get_continuous_state_output_port(), 
                   plant_state->get_input_port());
-  // pid_state ->set_publish_period(1e-2);
-  // plant_state ->set_publish_period(1e-2);
-
 
   // Dispatch the message to load geometry.
   geometry::DispatchLoadMessage(scene_graph);
@@ -225,17 +203,17 @@ int DoMain() {
   simulator.Initialize();
   simulator.StepTo(FLAGS_simulation_time);
 
-  for(long int i=0; i<= pid_state->data().cols(); i+=40)
-    std::cout<<pid_state->data().col(i).transpose()<<"      "<<
-      plant_state->data().col(i).transpose()<<std::endl;
-  std::cout<<pid_state->data().cols()<<std::endl;
+  // for(long int i=0; i<= pid_state->data().cols(); i+=40)
+  //   std::cout<<pid_state->data().col(i).transpose()<<"      "<<
+  //     plant_state->data().col(i).transpose()<<std::endl;
+  // std::cout<<pid_state->data().cols()<<std::endl;
     std::cout<<pid_state->data().rows()<<std::endl;
 
   return 1;
 }  // int main
 
 }  // namespace
-}  // namespace kuka_iiwa_arm
+}  // namespace allegro
 }  // namespace examples
 }  // namespace drake
 

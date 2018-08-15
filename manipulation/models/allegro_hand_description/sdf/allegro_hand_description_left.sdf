@@ -332,6 +332,7 @@
           <izz>4.24251e-06</izz>
         </inertia>
       </inertial>
+      <!--
       <collision name='link_13_collision'>
         <pose frame=''>0 0 0.00885 0 -0 0</pose>
         <geometry>
@@ -340,6 +341,7 @@
           </box>
         </geometry>
       </collision>
+    -->
       <visual name='link_13_visual'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
