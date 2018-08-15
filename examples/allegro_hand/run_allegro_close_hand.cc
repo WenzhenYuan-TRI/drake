@@ -45,11 +45,11 @@ DEFINE_double(constant_load, 0, "the constant load on all the joint. "
               "Suggested load is in the order of 0.01. When equals to "
               "0 (default), the program simulate the passive demo");
 
-DEFINE_double(simulation_time, 5, "Number of seconds to simulate");
+DEFINE_double(simulation_time, 1, "Number of seconds to simulate");
 
 DEFINE_string(test_hand, "right", "Which hand to model: 'left' or 'right'");
 
-DEFINE_double(max_time_step, 1.0e-5,
+DEFINE_double(max_time_step, 1.0e-4,
               "Maximum time step used for the integrators. [s]. "
               "If negative, a value based on parameter penetration_allowance "
               "is used.");
@@ -70,7 +70,7 @@ DEFINE_bool(add_gravity, false, "Whether adding gravity in the simulation");
 
 DEFINE_double(accuracy, 1.0e-2, "Sets the simulation accuracy for variable step"
               "size integrators with error control.");
-DEFINE_double(target_realtime_rate, 2e-4,
+DEFINE_double(target_realtime_rate, 0.1,
               "Desired rate relative to real time.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
 
@@ -127,6 +127,7 @@ int DoMain() {
   std::cout<< "rigid tree added \n";
 
   VectorX<double> kp, kd, ki;
+  // auto state_projection = GetControllerInputStateProjectionMat();
   SetPositionControlledIiwaGains(&kp, &ki, &kd);
 
   // auto controller = builder.AddSystem<
@@ -134,7 +135,7 @@ int DoMain() {
   //     std::move(tree_rigidbody), kp, ki, kd,
   //     false /* no feedforward acceleration */);
   auto controller = builder.AddSystem<
-      systems::controllers::PidController>(
+      systems::controllers::PidController>(GetControllerInputStateProjectionMat(),
       kp, ki, kd);
 
   std::cout<< "controller built\n";
@@ -147,11 +148,14 @@ int DoMain() {
   std::cout<< "controller connected \n";
 
   // Wire up trajectory
-  Eigen::VectorXd const_pos = Eigen::VectorXd::Zero(kAllegroNumJoints * 2) ;
-  const_pos(1)=0.5;
-  const_pos(2)=0.4;
+  // Eigen::VectorXd const_pos = Eigen::VectorXd::Zero(kAllegroNumJoints * 2) ;
+  // const_pos(1)=0.5;
+  // const_pos(2)=0.4;
+  // auto X = SetTargetJointPose();
   systems::ConstantVectorSource<double>* const_src =
-      builder.AddSystem<systems::ConstantVectorSource<double>>(const_pos);
+      builder.AddSystem<systems::ConstantVectorSource<double>>( //const_pos);
+      SetTargetJointPose());
+  // std::cout<<X<<std::endl<<std::endl;
   const_src->set_name("constant_source");
   builder.Connect(const_src->get_output_port(),
                   controller->get_input_port_desired_state());
@@ -221,11 +225,9 @@ int DoMain() {
   simulator.Initialize();
   simulator.StepTo(FLAGS_simulation_time);
 
-  for(long int i=0; i<= pid_state->data().cols(); i+=10)
+  for(long int i=0; i<= pid_state->data().cols(); i+=40)
     std::cout<<pid_state->data().col(i).transpose()<<"      "<<
       plant_state->data().col(i).transpose()<<std::endl;
-
-  // std::cout<<pid_state->data()<<std::endl;
   std::cout<<pid_state->data().cols()<<std::endl;
     std::cout<<pid_state->data().rows()<<std::endl;
 

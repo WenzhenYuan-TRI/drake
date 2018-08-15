@@ -16,6 +16,9 @@ void SetPositionControlledIiwaGains(Eigen::VectorXd* Kp,
                                     Eigen::VectorXd* Ki,
                                     Eigen::VectorXd* Kd);
 
+const MatrixX<double> GetControllerInputStateProjectionMat();
+
+const Eigen::VectorXd SetTargetJointPose();
 
 
 }  // namespace allegro_hand
