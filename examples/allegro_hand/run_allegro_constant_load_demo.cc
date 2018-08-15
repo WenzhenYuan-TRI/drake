@@ -17,6 +17,7 @@
 #include "drake/lcmt_viewer_draw.hpp"
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/multibody/multibody_tree/joints/revolute_joint.h"
+#include "drake/multibody/multibody_tree/joints/weld_joint.h"
 #include "drake/multibody/multibody_tree/multibody_plant/contact_results.h"
 #include "drake/multibody/multibody_tree/multibody_plant/contact_results_to_lcm.h"
 #include "drake/multibody/multibody_tree/multibody_plant/multibody_plant.h"
@@ -95,6 +96,12 @@ int DoMain() {
   multibody::parsing::AddModelFromSdfFile(
                           full_name, &plant, &scene_graph);
 
+  // Weld the hand to the world frame
+  const auto& joint_hand_root = plant.GetBodyByName("hand_root");
+  plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {}, 
+      joint_hand_root, {}, Isometry3<double>::Identity());
+
+  // Add gravity, if needed
   if (FLAGS_add_gravity)
     plant.AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
