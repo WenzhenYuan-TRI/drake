@@ -12,6 +12,7 @@
 #include "drake/lcmt_viewer_draw.hpp"
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/multibody/multibody_tree/joints/revolute_joint.h"
+#include "drake/multibody/multibody_tree/joints/prismatic_joint.h"
 #include "drake/multibody/multibody_tree/joints/weld_joint.h"
 #include "drake/multibody/multibody_tree/multibody_plant/contact_results.h"
 #include "drake/multibody/multibody_tree/multibody_plant/contact_results_to_lcm.h"
@@ -83,18 +84,24 @@ int DoMain() {
   std::string full_name = FindResourceOrThrow(HandSdfPath);
   multibody::parsing::AddModelFromSdfFile(
                           full_name, &plant, &scene_graph);
-    // Weld the hand to the world frame
-  const auto& joint_hand_root = plant.GetBodyByName("hand_root");
-  plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {}, 
-      joint_hand_root, {}, Isometry3<double>::Identity());
   if (FLAGS_add_gravity)  plant.AddForceElement<
       multibody::UniformGravityFieldElement>(-9.81 * Eigen::Vector3d::UnitZ());
+
+
+    // The joint of the hand sliding in the world frame
+  const auto& joint_hand_root = plant.GetBodyByName("hand_root");
+  const auto& joint_hand_sliding = plant.AddJoint<multibody::PrismaticJoint>(
+      "slide_hand", plant.world_body(), {}, joint_hand_root, {}, 
+      Vector3<double>::UnitY());
+  const auto& actuator_hand_sliding =
+      plant.AddJointActuator("slider_hand_actuator", joint_hand_sliding);
+  (void) actuator_hand_sliding;
+
 
   plant.Finalize(&scene_graph);
   plant.set_penetration_allowance(2e-2);  /* in [m] */
   /* The maximum slipping speed allowed during stiction. [m/s]*/
-  plant.set_stiction_tolerance(1e-2);  
-      
+  plant.set_stiction_tolerance(1e-2);      
 
   // visualization of the hand model
   const systems::rendering::PoseBundleToDrawMessage& converter =
@@ -154,13 +161,13 @@ int DoMain() {
                   contact_results_to_lcm.get_input_port(0));
   builder.Connect(contact_results_to_lcm.get_output_port(0),
                   contact_results_publisher.get_input_port());
-
+  std::cout<<"contact added \n";
 
   //set up signal loggers 
   auto pid_state = builder.AddSystem<drake::systems::SignalLogger<double>>(
-                          kAllegroNumJoints, 5e5);
+                          plant.num_actuated_dofs());
   auto plant_state = builder.AddSystem<drake::systems::SignalLogger<double>>(
-                          kAllegroNumJoints * 2, 10e5);
+                          plant.num_multibody_states());
   builder.Connect(controller->get_output_port_control(), 
                   pid_state->get_input_port());
   builder.Connect(plant.get_continuous_state_output_port(), 
