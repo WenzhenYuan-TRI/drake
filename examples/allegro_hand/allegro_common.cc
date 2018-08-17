@@ -18,8 +18,6 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
   *Kp = Eigen::VectorXd::Ones(kAllegroNumJoints) * 0.5;
   Kd->resize(Kp->size());
   for (int i = 0; i < Kp->size(); i++) {
-    // Critical damping gains.
-    // (*Kd)[i] = 2 * std::sqrt((*Kp)[i]);
     (*Kd)[i] = 5e-2;
   }
   *Ki = Eigen::VectorXd::Zero(kAllegroNumJoints);
@@ -84,8 +82,7 @@ void GetControlPortMapping(
       Px(it->second, q_index) = 1.0;
       Px(kAllegroNumJoints + it->second, num_plant_positions + v_index) = 1.0;
   }
-  // PRINT_VARn(Px);
-  
+
   // Verify the mapping (or "projection") matrix Px only has a single 1.0 entry
   // per row/column.
   for (int i=0;i<plant.num_multibody_states();++i) {
@@ -105,23 +102,6 @@ void GetControlPortMapping(
     if (joint_name_mapping.find(joint.name()) != joint_name_mapping.end())
       Py(actuator_index, joint_name_mapping[joint.name()]) = 1.0;
   }
-
-  // PRINT_VARn(Py);
-}
-
-const Eigen::VectorXd SetTargetJointPose(){
-  Eigen::VectorXd const_pos = Eigen::VectorXd::Zero(kAllegroNumJoints * 2) ;
-  const_pos(0)=0.8;
-  const_pos(1)=1.1;
-  const_pos(2)=1;
-
-  const_pos(4) = 0.5;
-  const_pos(6) = 0.5;
-
-  const_pos(12) = 0.2;
-
-
-  return const_pos;
 }
 
 

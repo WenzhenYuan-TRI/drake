@@ -33,6 +33,7 @@ Eigen::VectorXd AllegroConstantJointValue::set_finger_pose(const int finger_inde
 Eigen::VectorXd AllegroConstantJointValue::set_open_hand(){
     TargetPose.setZero();
     set_joint_pose("joint_12", 0.263);
+    set_joint_pose("joint_13", 1.1);
     return TargetPose;
 }
 
@@ -46,7 +47,7 @@ Eigen::VectorXd AllegroConstantJointValue::set_close_hand(){
 
 Eigen::VectorXd AllegroConstantJointValue::set_test_position(){
     TargetPose.setZero();
-    set_finger_pose(0,  -0.1,   0.1,  0.5, 0.2);
+    set_finger_pose(0,  0.5,   0.1,  0.5, 0.2);
     set_joint_pose(1, 0, 0.4);
     set_joint_pose(14, 0.4);
     return TargetPose;
