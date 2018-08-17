@@ -5,6 +5,7 @@
 #include <gflags/gflags.h>
 
 #include "drake/examples/allegro_hand/allegro_common.h"
+#include "drake/examples/allegro_hand/allegro_set_joint_pose.h"
 
 #include "drake/common/find_resource.h"
 #include "drake/common/text_logging_gflags.h"
@@ -88,8 +89,11 @@ int DoMain() {
       multibody::UniformGravityFieldElement>(-9.81 * Eigen::Vector3d::UnitZ());
 
 
-    // The joint of the hand sliding in the world frame
+    // Weld the hand to the world frame
   const auto& joint_hand_root = plant.GetBodyByName("hand_root");
+  // plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {}, 
+  //     joint_hand_root, {}, Isometry3<double>::Identity());
+
   const auto& joint_hand_sliding = plant.AddJoint<multibody::PrismaticJoint>(
       "slide_hand", plant.world_body(), {}, joint_hand_root, {}, 
       Vector3<double>::UnitY());
@@ -118,31 +122,28 @@ int DoMain() {
   builder.Connect(scene_graph.get_pose_bundle_output_port(),
                   converter.get_input_port(0));
   builder.Connect(converter, publisher);
-
   std::cout<< "Model added \n";
 
+  // set target joint position object
+  AllegroConstantJointValue hand_joint_target(plant);
 
   VectorX<double> kp, kd, ki;
   MatrixX<double> Px, Py;
   GetControlPortMapping(plant, Px, Py);
   SetPositionControlledGains(&kp, &ki, &kd);
-  // auto controller = builder.AddSystem<
-  //     systems::controllers::InverseDynamicsController>(
-  //     std::move(tree_rigidbody), kp, ki, kd,
-  //     false /* no feedforward acceleration */);
   auto controller = builder.AddSystem<
-      systems::controllers::PidController>(Px, Py, kp, ki, kd);
+      systems::controllers::PidController>(hand_joint_target.get_Px(), 
+        hand_joint_target.get_Py(), kp, ki, kd);
   builder.Connect(plant.get_continuous_state_output_port(),
                  controller->get_input_port_estimated_state());
   builder.Connect(controller->get_output_port_control(),
                  plant.get_actuation_input_port());
-
   std::cout<< "controller connected \n";
 
   // Wire up trajectory
   systems::ConstantVectorSource<double>* const_src =
-      builder.AddSystem<systems::ConstantVectorSource<double>>( //const_pos);
-      SetTargetJointPose());
+      builder.AddSystem<systems::ConstantVectorSource<double>>(
+      hand_joint_target.set_close_hand());
   const_src->set_name("constant_source");
   builder.Connect(const_src->get_output_port(),
                  controller->get_input_port_desired_state());
@@ -209,8 +210,8 @@ int DoMain() {
   // print the status of the joints
   int print_slice = 100;  //  print every X signals
   for(long int i=0; i<= plant_state->data().cols(); i += print_slice)
-      std::cout<< (Px * plant_state->data().col(i)).transpose().segment<
-        kAllegroNumJoints>(0)  << std::endl;
+      std::cout<< (hand_joint_target.get_Px() * plant_state->data().col(i)).
+        transpose().segment<kAllegroNumJoints>(0)  << std::endl;
 
   return 1;
 }  // int main
