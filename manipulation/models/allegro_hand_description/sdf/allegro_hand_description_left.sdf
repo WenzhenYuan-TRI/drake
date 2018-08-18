@@ -649,7 +649,7 @@
     <link name='link_7'>
       <pose frame=''>0 0 0.2045 0 -0 0</pose>
       <inertial>
-        <pose frame=''>0 0 0.016991 0 -0 0</pose>
+        <pose frame=''>0 0 0 0 -0 0</pose>
         <mass>0.0264</mass>
         <inertia>
           <ixx>2.54817e-06</ixx>

@@ -438,6 +438,7 @@
           <iyy>3.59803e-05</iyy>
           <iyz>2.69559e-08</iyz>
           <izz>4.92034e-05</izz>
+        </inertia>
       </inertial>
       
       <collision name='link_15_collision'>
@@ -739,6 +740,7 @@
           <iyy>7.54004e-07</iyy>
           <iyz>-3.0083e-09</iyz>
           <izz>1.91655e-06</izz>
+        </inertia>
       </inertial>
       <collision name='link_8_collision'>
         <pose frame=''>0 0 0.0082 0 -0 0</pose>
@@ -886,7 +888,7 @@
     <link name='link_11'>
       <pose frame=''>0 -0.052983 0.201844 0.087267 -0 0</pose>
       <inertial>
-        <pose frame=''>0 0 0.016991 0 -0 0</pose>
+        <pose frame=''>0 0 0 0 -0 0</pose>
         <mass>0.0264</mass>
         <inertia>
           <ixx>2.54817e-06</ixx>
