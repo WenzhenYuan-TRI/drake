@@ -1,0 +1,172 @@
+Record for InertIa measurIng In meshlab
+
+Hand root
+mass =   0.4154  ;
+volume = 146.8e-6  ;
+Ixx =    2650.8e-10  ;
+Iyy=     1602e-10 ;
+Izz=     1575.3e-10  ;
+Ixy=     -1.11e-10  ;
+Ixz=     9.002e-10  ;
+Iyz=     -133.239e-10  ;
+MassCenter << -0.936e-2, -0.0854e-2, -3.823e-2;
+FrameOffset << 0, 0, 0.095;
+
+Hand root_left   // rotation exists; not recommend using this data
+mass =   0.4154  ;
+volume = 146.99e-6  ;
+Ixx =    2654.1e-10  ;
+Iyy=     1578e-10 ;
+Izz=     1603.4e-10  ;
+Ixy=     -8.7e-10  ;
+Ixz=     1.11e-10  ;
+Iyz=     -1.333e-8  ;
+MassCenter << -0.936e-2, 3.82e-2, 8.523e-4;
+FrameOffset << 0, 0, 0.095;
+
+Link0
+mass =   0.0119  ;
+volume = 3.42e-6  ;
+Ixx =    4.397e-10  ;
+Iyy=     2.165e-10 ;
+Izz=     4.292e-10  ;
+Ixy=     4.861e-13  ;
+Ixz=     1.606e-11  ;
+Iyz=     -5.759e-12  ;
+MassCenter << -0.047e-2, 0.024e-2,  0.5963e-2;
+FrameOffset << 0,0,0;
+
+LInk1
+mass =   0.065  ;
+volume = 33.79e-6  ;
+Ixx =    127.495e-10  ;
+Iyy=     140.3167e-10 ;
+Izz=     28.0452e-10  ;
+Ixy=     0  ;
+Ixz=     0 ;
+Iyz=     0  ;
+MassCenter << 0, -4.172e-4,  2.7e-2;
+FrameOffset << 0,0,0;
+
+Link2
+mass =   0.0355  ;
+volume = 18.2602e-6  ;
+Ixx =    36.22e-10  ;
+Iyy=     32.9228e-10 ;
+Izz=     16.47558e-10  ;
+Ixy=     5.722e-13  ;
+Ixz=     -3.198e-11  ;
+Iyz=     10.7487e-12  ;
+MassCenter << -0.006121e-2, -0.001909e-2,  2.63513e-2;
+FrameOffset << 0,0,0;
+
+Link3
+mass =   0.01259  ;
+volume = 3.619e-6  ;
+Ixx =    4.6797e-10  ;
+Iyy=     2.342e-10 ;
+Izz=     4.5302e-10  ;
+Ixy=     4.712e-13  ;
+Ixz=     -1.332e-11  ;
+Iyz=     0.004712e-10  ;
+MassCenter << -0.03e-2, 0.012e-2, 0.9673e-2; 
+FrameOffset << 0,0,0;
+
+Link3_tip
+mass =   0.0138  ;
+volume = 8.55565e-6  ;
+Ixx =    5.69778e-10  ;
+Iyy=     5.697670e-10 ;
+Izz=     5.619485e-10 ;
+Ixy=     0  ;
+Ixz=     0  ;
+Iyz=     0  ;
+MassCenter << 0,  0, -0.129724e-2; 
+FrameOffset << 0,0,0.0267;
+
+// Not used
+Link4
+mass =   0.0119  ;
+volume = 3.42e-6  ;
+Ixx =    4.387e-10  ;
+Iyy=     2.15976e-10 ;
+Izz=     4.2857e-10  ;
+Ixy=     4.887e-13  ;
+Ixz=     1.6077e-11  ;
+Iyz=     -5.7368e-12  ;
+MassCenter << -0.047e-2, 0.024e-2,  0.655e-2;
+FrameOffset << 0,0,0;
+
+Link12
+mass =   0.0176  ;
+volume = 46.3956e-6  ;
+Ixx =    112.622e-10  ;
+Iyy=     128.812e-10 ;
+Izz=     86.9286e-10  ;
+Ixy=     2.188e-11  ;
+Ixz=     6.801e-11  ;
+Iyz=     8.21085e-10  ;
+MassCenter << -1.77647e-2, 0.813654e-2,  1.2389e-2;
+FrameOffset << 0,0,0;
+
+Link12_left
+mass =   0.0176  ;
+volume = 46.3956e-6  ;
+Ixx =    112.622e-10  ;
+Iyy=     128.812e-10 ;
+Izz=     86.9286e-10  ;
+Ixy=     -2.188e-11  ;
+Ixz=     6.801e-11  ;
+Iyz=     -8.21085e-10  ;
+MassCenter << -1.77647e-2, -0.813654e-2,  1.2389e-2;
+FrameOffset << 0,0,0;
+
+Link13
+mass =   0.0119  ;
+volume = 3.4175e-6  ;
+Ixx =    4.387e-10  ;
+Iyy=     2.15978e-10 ;
+Izz=     4.285747e-10  ;
+Ixy=     4.887e-13  ;
+Ixz=     1.6077e-11  ;
+Iyz=     -5.7368e-12  ;
+MassCenter << -0.04748e-2, 0.02394e-2,  0.578339e-2;
+FrameOffset << 0,0,0;
+
+Link14
+mass =   0.038  ;
+volume = 19.328e-6  ;
+Ixx =    52.4784e-10  ;
+Iyy=     45.8644e-10 ;
+Izz=     18.4765e-10  ;
+Ixy=     5.428e-13  ;
+Ixz=     4.4377e-11  ;
+Iyz=     -2.84e-11  ;
+MassCenter << -0.006121e-2, -0.001909e-2,  2.63513e-2;
+FrameOffset << 0,0,0;
+
+// Not calculated
+Link15
+mass =   0.0418  ;
+volume = 3.619e-6  ;
+Ixx =    34.5988e-10  ;
+Iyy=     30.3556e-10 ;
+Izz=     16.1337e-10  ;
+Ixy=     0 ;
+Ixz=     0  ;
+Iyz=     -0.00239e-10  ;
+MassCenter << 0, 0.005718e-2, 1.2433e-2; 
+FrameOffset << 0,0,0;
+
+// Not calculated
+Link15_tip
+mass =   0.0138  ;
+volume = 8.55565e-6  ;
+Ixx =    5.69778e-10  ;
+Iyy=     5.697670e-10 ;
+Izz=     5.619485e-10 ;
+Ixy=     0  ;
+Ixz=     0  ;
+Iyz=     0  ;
+MassCenter << 0,  0, -0.129724e-2; 
+FrameOffset << 0,0,0.0423;

@@ -12,15 +12,15 @@ int DoMain()
   Vector3<double> MassCenter; 
   Vector3<double> FrameOffset;
 
-mass =   0.038  ;
-volume = 19.328e-6  ;
-Ixx =    52.4784e-10  ;
-Iyy=     45.8644e-10 ;
-Izz=     18.4765e-10  ;
-Ixy=     5.428e-13  ;
-Ixz=     4.4377e-11  ;
-Iyz=     -2.84e-11  ;
-MassCenter << -0.006121e-2, -0.001909e-2,  2.63513e-2;
+mass =   0.0418  ;
+volume = 3.619e-6  ;
+Ixx =    34.5988e-10  ;
+Iyy=     30.3556e-10 ;
+Izz=     16.1337e-10  ;
+Ixy=     0 ;
+Ixz=     0  ;
+Iyz=     -0.00239e-10  ;
+MassCenter << 0, 0.005718e-2, 1.2433e-2; 
 FrameOffset << 0,0,0;
 
   MassCenter += FrameOffset;
@@ -41,12 +41,12 @@ FrameOffset << 0,0,0;
   PRINT_Inertia(iyz);
   PRINT_Inertia(izz);
 
-  ixx += MassCenter(0) * MassCenter(0) * mass;
-  iyy += MassCenter(1) * MassCenter(1) * mass;
-  izz += MassCenter(2) * MassCenter(2) * mass;
-  ixy += MassCenter(0) * MassCenter(1) * mass;
-  ixz += MassCenter(0) * MassCenter(2) * mass;
-  iyz += MassCenter(1) * MassCenter(2) * mass;
+  ixx += (MassCenter(2) * MassCenter(2) + MassCenter(1) * MassCenter(1)) * mass;
+  iyy += (MassCenter(2) * MassCenter(2) + MassCenter(0) * MassCenter(0)) * mass;
+  izz += (MassCenter(1) * MassCenter(1) + MassCenter(0) * MassCenter(0)) * mass;
+  ixy -= MassCenter(0) * MassCenter(1) * mass;
+  ixz -= MassCenter(0) * MassCenter(2) * mass;
+  iyz -= MassCenter(1) * MassCenter(2) * mass;
 
   std::cout<<std::endl;
 
@@ -80,6 +80,7 @@ Iyz=     -0.00239e-10  ;
 MassCenter << 0, 0.005718e-2, 1.2433e-2; 
 FrameOffset << 0,0,0;
 
+
   MassCenter += FrameOffset;
   rho = mass / volume; 
 
@@ -90,12 +91,12 @@ FrameOffset << 0,0,0;
   iyz = rho * Iyz;
   ixz = rho * Ixz; 
 
-  ixx += MassCenter(0) * MassCenter(0) * mass;
-  iyy += MassCenter(1) * MassCenter(1) * mass;
-  izz += MassCenter(2) * MassCenter(2) * mass;
-  ixy += MassCenter(0) * MassCenter(1) * mass;
-  ixz += MassCenter(0) * MassCenter(2) * mass;
-  iyz += MassCenter(1) * MassCenter(2) * mass;
+  ixx += (MassCenter(2) * MassCenter(2) + MassCenter(1) * MassCenter(1)) * mass;
+  iyy += (MassCenter(2) * MassCenter(2) + MassCenter(0) * MassCenter(0)) * mass;
+  izz += (MassCenter(1) * MassCenter(1) + MassCenter(0) * MassCenter(0)) * mass;
+  ixy -= MassCenter(0) * MassCenter(1) * mass;
+  ixz -= MassCenter(0) * MassCenter(2) * mass;
+  iyz -= MassCenter(1) * MassCenter(2) * mass;
 
       PRINT_Inertia(ixx);
   PRINT_Inertia(ixy);
@@ -128,12 +129,12 @@ FrameOffset << 0,0,0.0423;
   iyz += rho * Iyz;
   ixz += rho * Ixz; 
 
-  ixx += MassCenter(0) * MassCenter(0) * mass;
-  iyy += MassCenter(1) * MassCenter(1) * mass;
-  izz += MassCenter(2) * MassCenter(2) * mass;
-  ixy += MassCenter(0) * MassCenter(1) * mass;
-  ixz += MassCenter(0) * MassCenter(2) * mass;
-  iyz += MassCenter(1) * MassCenter(2) * mass;
+  ixx += (MassCenter(2) * MassCenter(2) + MassCenter(1) * MassCenter(1)) * mass;
+  iyy += (MassCenter(2) * MassCenter(2) + MassCenter(0) * MassCenter(0)) * mass;
+  izz += (MassCenter(1) * MassCenter(1) + MassCenter(0) * MassCenter(0)) * mass;
+  ixy -= MassCenter(0) * MassCenter(1) * mass;
+  ixz -= MassCenter(0) * MassCenter(2) * mass;
+  iyz -= MassCenter(1) * MassCenter(2) * mass;
 
 
     PRINT_Inertia(ixx);
