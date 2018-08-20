@@ -61,7 +61,7 @@ MassCenter << -0.006121e-2, -0.001909e-2,  2.63513e-2;
 FrameOffset << 0,0,0;
 
 Link3
-mass =   0.01259  ;
+mass =   0.0096  ;
 volume = 3.619e-6  ;
 Ixx =    4.6797e-10  ;
 Iyy=     2.342e-10 ;
@@ -73,7 +73,7 @@ MassCenter << -0.03e-2, 0.012e-2, 0.9673e-2;
 FrameOffset << 0,0,0;
 
 Link3_tip
-mass =   0.0138  ;
+mass =   0.0168  ;
 volume = 8.55565e-6  ;
 Ixx =    5.69778e-10  ;
 Iyy=     5.697670e-10 ;
@@ -147,7 +147,7 @@ FrameOffset << 0,0,0;
 
 // Not calculated
 Link15
-mass =   0.0418  ;
+mass =   0.0388  ;
 volume = 3.619e-6  ;
 Ixx =    34.5988e-10  ;
 Iyy=     30.3556e-10 ;
@@ -160,7 +160,7 @@ FrameOffset << 0,0,0;
 
 // Not calculated
 Link15_tip
-mass =   0.0138  ;
+mass =   0.0168  ;
 volume = 8.55565e-6  ;
 Ixx =    5.69778e-10  ;
 Iyy=     5.697670e-10 ;
