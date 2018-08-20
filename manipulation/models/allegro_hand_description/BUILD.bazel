@@ -23,6 +23,16 @@ drake_cc_googletest(
     ],
 )
 
+drake_cc_googletest(
+    name = "allegro_hand_test_sdf",
+    srcs = ["sdf/test/allegro_hand_test_sdf.cc"],
+    data = [":models"],
+    deps = [
+        "//common:find_resource",
+        "//multibody/parsers",
+    ],
+)
+
 install_data()
 
 add_lint_tests()
