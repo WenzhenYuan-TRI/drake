@@ -2,7 +2,7 @@
 ///
 /// This demo sets up a position controlled and gravity compensated Allegro 
 /// hand within a simulation, to reach and hold a given joint space pose.
-/// Position controlled using PID controller. 
+/// Position controlled using PID controller.
 /// The hand is initialized at 0 joint space pose, and is controlled to track 
 /// and hold a final joint space pose. The preset final joint space pose is 
 /// set in the class AllegroConstantJointValue. The states of the hand plant and
@@ -76,7 +76,7 @@ int DoMain() {
   const std::string HandSdfPath = "drake/manipulation/models/allegro_hand_"
       "description/sdf/allegro_hand_description_" + FLAGS_test_hand + ".sdf";
   const std::string ObjectModelPath = "drake/examples/allegro_hand/grasp/"
-      "models/objects/simple_mug.sdf"
+      "models/objects/simple_mug.sdf";
 
   // build the scene and the hand model
   geometry::SceneGraph<double>& scene_graph = 
@@ -88,7 +88,7 @@ int DoMain() {
   std::string full_name = FindResourceOrThrow(HandSdfPath);
   multibody::parsing::AddModelFromSdfFile(
                           full_name, &plant, &scene_graph);
-  std::string full_name = FindResourceOrThrow(ObjectModelPath);
+  full_name = FindResourceOrThrow(ObjectModelPath);
   multibody::parsing::AddModelFromSdfFile(
                           full_name, &plant, &scene_graph);
   if (FLAGS_add_gravity)  plant.AddForceElement<
@@ -101,14 +101,13 @@ int DoMain() {
       joint_hand_root, {}, Isometry3<double>::Identity());
 
   plant.Finalize(&scene_graph);
-  plant.set_penetration_allowance(2e-2);  /* in [m] */
+  plant.set_penetration_allowance(2e-3);  /* in [m] */
   /* The maximum slipping speed allowed during stiction. [m/s]*/
-  plant.set_stiction_tolerance(1e-2);      
+  plant.set_stiction_tolerance(1e-2);    
 
-  // Create a context for this system:
-  std::unique_ptr<systems::Context<double>> diagram_context =
-      diagram->CreateDefaultContext();
-  diagram->SetDefaultContext(diagram_context.get());
+
+  // Dispatch the message to load geometry.
+  geometry::DispatchLoadMessage(scene_graph);  
 
   // visualization of the hand model
   const systems::rendering::PoseBundleToDrawMessage& converter =
@@ -126,29 +125,7 @@ int DoMain() {
                   converter.get_input_port(0));
   builder.Connect(converter, publisher);
 
-
-
-
-  // object position
-  const Body<double>& mug = plant.GetBodyByName("main_body");
-  const Body<double>& hand = plant.GetBodyByName("hand_root");
-  systems::Context<double>& plant_context =
-      diagram->GetMutableSubsystemContext(plant, diagram_context.get());
-
-  // Initialize the mug pose to be right in the middle between the fingers.
-  std::vector<Isometry3d> X_WB_all;
-  plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
-  const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
-  Eigen::Isometry3d X_WM;
-  Eigen::Vector3d rpy( M_PI /2, 0, 0);
-  X_WM.linear() = RotationMatrix<double>(RollPitchYaw<double>(rpy)).matrix();
-  X_WM.translation() = p_WHand + Vector3d(15, 0, 30);
-  plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
-
-
-
-
-
+std::cout<<"end visualization"<<std::endl;
 
 
 
@@ -169,21 +146,7 @@ int DoMain() {
                  plant.get_actuation_input_port());
 
 
-
-
-
-
-
-
-
-  // Set target pose
-
-  target_pose = hand_joint_target.set_close_hand();
-  const_src->set_name("constant_source");
-  builder.Connect(const_src->get_output_port(),
-                 controller->get_input_port_desired_state());
-
-
+std::cout<<"set controller"<<std::endl;
 
 
   // Publish contact results for visualization.
@@ -200,10 +163,66 @@ int DoMain() {
                   contact_results_publisher.get_input_port());
 
 
-  // Dispatch the message to load geometry.
-  geometry::DispatchLoadMessage(scene_graph);
+
+std::cout<<"set contact"<<std::endl;
+
+
+
+
+
+  // Set target pose
+
+  Eigen::VectorXd target_pose = hand_joint_target.set_close_hand();
+  systems::ConstantVectorSource<double>* const_src =
+    builder.AddSystem<systems::ConstantVectorSource<double>>(target_pose);
+  const_src->set_name("constant_source");
+  builder.Connect(const_src->get_output_port(),
+                 controller->get_input_port_desired_state());
+
+std::cout<<"set target pose"<<std::endl;
+
+
+
+
 
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
+  // Create a context for this system:
+  std::unique_ptr<systems::Context<double>> diagram_context =
+      diagram->CreateDefaultContext();
+  diagram->SetDefaultContext(diagram_context.get());
+
+
+  // object position
+  const multibody::Body<double>& mug = plant.GetBodyByName("main_body");
+  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
+  systems::Context<double>& plant_context =
+      diagram->GetMutableSubsystemContext(plant, diagram_context.get());
+
+  // Initialize the mug pose to be right in the middle between the fingers.
+  std::vector<Eigen::Isometry3d> X_WB_all;
+  plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
+  const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
+  Eigen::Isometry3d X_WM;
+  Eigen::Vector3d rpy( M_PI /2, 0, 0);
+  X_WM.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
+  X_WM.translation() = p_WHand + Eigen::Vector3d(0.05, 0.05, 0.08);
+  X_WM.makeAffine();
+  plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
+  std::cout<<mug.index();
+
+
+
+std::cout<<"end setting object position"<<std::endl;
+
+
+
+
+
+
+
+  
+std::cout<<"what is this?"<<std::endl;
+
 
   // Set up simulator. Using semi_explicit_euler for now.
   const double max_time_step = FLAGS_max_time_step > 0 ? 
