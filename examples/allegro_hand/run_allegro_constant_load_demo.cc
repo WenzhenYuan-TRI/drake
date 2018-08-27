@@ -1,20 +1,15 @@
 /// @file
 ///
-/// This demo sets up a simple dynamic simulation for the Allegro hand using 
-/// the multi-body library, on the discete simulation. The joint torques are 
-/// constant values that can be manualy set, and is the same for all the 
-/// joints. It can also be set whether to simulate the right hand or the left 
-/// hand.   
+/// This demo sets up a simple dynamic simulation for the Allegro hand using
+/// the multi-body library. The joint torques are constant values that can be
+/// set manually, and is the same for all the joints. This demo also allows to
+/// specify whether the right or left hand is simulated.
 
 #include <gflags/gflags.h>
-#include "fmt/ostream.h"
 
 #include "drake/common/drake_assert.h"
 #include "drake/common/find_resource.h"
 #include "drake/common/text_logging_gflags.h"
-#include "drake/lcm/drake_lcm.h"
-  
-#include "drake/lcmt_viewer_draw.hpp"
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/multibody/multibody_tree/joints/revolute_joint.h"
 #include "drake/multibody/multibody_tree/joints/weld_joint.h"
@@ -23,6 +18,8 @@
 #include "drake/multibody/multibody_tree/multibody_plant/multibody_plant.h"
 #include "drake/multibody/multibody_tree/parsing/multibody_plant_sdf_parser.h"
 #include "drake/multibody/multibody_tree/uniform_gravity_field_element.h"
+#include "drake/lcm/drake_lcm.h"
+#include "drake/lcmt_viewer_draw.hpp"
 #include "drake/systems/analysis/simulator.h"
 #include "drake/systems/analysis/implicit_euler_integrator.h"
 #include "drake/systems/analysis/runge_kutta2_integrator.h"
@@ -231,6 +228,9 @@ int DoMain() {
 }  // namespace drake
 
 int main(int argc, char* argv[]) {
+  gflags::SetUsageMessage(
+      "A simple dynamic simulation for the Allegro hand moving under constant"
+      " torques.");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   return drake::examples::allegro_hand::DoMain();
 }
