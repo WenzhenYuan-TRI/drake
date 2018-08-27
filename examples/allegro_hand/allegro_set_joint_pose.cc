@@ -38,7 +38,7 @@ Eigen::VectorXd AllegroConstantJointValue::set_open_hand(){
 }
 
 Eigen::VectorXd AllegroConstantJointValue::set_close_hand(){
-    set_finger_pose(0,  1.1,   1.5,  1.5, 1.);   //Thumb
+    set_finger_pose(0,  1.396,   0,  0.4, 1.);   //Thumb
     set_finger_pose(1, -0.1,   1.6,  1.7, 1.);   //Index
     set_finger_pose(2,    0,   1.6,  1.7, 1.);   //Middle
     set_finger_pose(3,  0.1,   1.6,  1.7, 1.);   //end

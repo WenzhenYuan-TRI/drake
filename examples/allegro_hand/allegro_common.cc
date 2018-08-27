@@ -20,6 +20,7 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
   for (int i = 0; i < Kp->size(); i++) {
     (*Kd)[i] = 5e-2;
   }
+  (*Kp)[0] = 0.8;
   *Ki = Eigen::VectorXd::Zero(kAllegroNumJoints);
 }
 
@@ -83,11 +84,16 @@ void GetControlPortMapping(
       Px(kAllegroNumJoints + it->second, num_plant_positions + v_index) = 1.0;
   }
 
+    // PRINT_VAR(Px);
+
   // Verify the mapping (or "projection") matrix Px only has a single 1.0 entry
   // per row/column.
-  for (int i=0;i<plant.num_multibody_states();++i) {
-    DRAKE_DEMAND(Px.row(i).sum() == 1.0);
-  }
+  // for (int i=0;i<plant.num_multibody_states();++i) {
+  //   std::cout<<i<<Px.row(i).sum()<<std::endl;
+  //   DRAKE_DEMAND(Px.row(i).sum() == 1.0);
+  // }
+
+
 
  // Build the projection matrix Py for the PID controller. Maps u_c from
   // the controller into u for the MBP, that is, u = Py * u_c where:
