@@ -18,6 +18,10 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp,
                                     Eigen::VectorXd* Ki,
                                     Eigen::VectorXd* Kd);
 
+void GetControlPortMapping(
+    multibody::multibody_plant::MultibodyPlant<double>& plant, 
+    MatrixX<double>& Px, MatrixX<double>& Py);
+
 const std::map<std::string, int> SetJointNameMapping();
 
 

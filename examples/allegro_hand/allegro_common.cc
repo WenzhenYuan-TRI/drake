@@ -57,6 +57,53 @@ const std::map<std::string, int> SetJointNameMapping(){
 
 }
 
+void GetControlPortMapping(
+    multibody::multibody_plant::MultibodyPlant<double>& plant, 
+    MatrixX<double>& Px, MatrixX<double>& Py) {  
+
+  std::map<std::string, int> joint_name_mapping = SetJointNameMapping();
+
+  const int num_plant_positions = plant.num_positions();
+
+  // Projection matrix. We include "all" dofs in the hand.
+  // x_tilde = Px * x;
+  // where:
+  //  x is the state in the MBP.
+  //  x_tilde is the state in the order we want it for our better understanding.
+  Px.resize(kAllegroNumJoints * 2 , plant.num_multibody_states());
+  Px.setZero();
+
+  for (std::map<std::string,int>::iterator it = joint_name_mapping.begin(); 
+                                        it!= joint_name_mapping.end(); it++){
+      const auto& joint = plant.GetJointByName(it->first);
+      const int q_index = joint.position_start();
+      const int v_index = joint.velocity_start();
+
+      Px(it->second, q_index) = 1.0;
+      Px(kAllegroNumJoints + it->second, num_plant_positions + v_index) = 1.0;
+  }
+
+  // Verify the mapping (or "projection") matrix Px only has a single 1.0 entry
+  // per row/column.
+  for (int i=0;i<plant.num_multibody_states();++i) {
+    DRAKE_DEMAND(Px.row(i).sum() == 1.0);
+  }
+
+ // Build the projection matrix Py for the PID controller. Maps u_c from
+  // the controller into u for the MBP, that is, u = Py * u_c where:
+  //  u_c is the output from the PID controller in our prefered order.
+  //  u is the output as require by the MBP.
+  Py.resize(plant.num_actuated_dofs(), kAllegroNumJoints);
+  Py.setZero();
+  for (multibody::JointActuatorIndex actuator_index(0);
+       actuator_index < plant.num_actuated_dofs(); ++actuator_index) {
+    const auto& actuator = plant.model().get_joint_actuator(actuator_index);
+    const auto& joint = actuator.joint();
+    if (joint_name_mapping.find(joint.name()) != joint_name_mapping.end())
+      Py(actuator_index, joint_name_mapping[joint.name()]) = 1.0;
+  }
+}
+
 
 }  // namespace allegro_hand
 }  // namespace examples

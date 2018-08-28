@@ -21,6 +21,17 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "allegro_set_joint_pose",
+    srcs = ["allegro_set_joint_pose.cc"],
+    hdrs = ["allegro_set_joint_pose.h"],
+    deps = [
+        ":allegro_common",
+        "//multibody/multibody_tree/multibody_plant",
+        "//multibody/parsers",
+    ],
+)
+
 drake_cc_binary(
     name = "run_allegro_constant_load_demo",
     srcs = ["run_allegro_constant_load_demo.cc"],
@@ -37,6 +48,32 @@ drake_cc_binary(
         "//systems/analysis",
         "//systems/primitives:constant_vector_source",
         "//systems/rendering:pose_bundle_to_draw_message",
+        "@gflags",
+    ],
+)
+
+drake_cc_binary(
+    name = "run_allegro_controlled_demo",
+    srcs = ["run_allegro_controlled_demo.cc"],
+    data = [
+        "//manipulation/models/allegro_hand_description:models",
+    ],
+    deps = [
+        ":allegro_common",
+        ":allegro_set_joint_pose",
+        "//common:find_resource",
+        "//common:text_logging_gflags",
+        "//lcm",
+        "//geometry:geometry_visualization",
+        "//multibody/multibody_tree/multibody_plant",
+        "//multibody/multibody_tree/multibody_plant:contact_results_to_lcm",
+        "//multibody/multibody_tree/parsing:multibody_plant_sdf_parser",
+        "//systems/analysis",
+        "//systems/controllers:inverse_dynamics_controller",
+        "//systems/primitives:constant_vector_source",
+        "//systems/primitives:signal_logger",
+        "//systems/rendering:pose_bundle_to_draw_message",
+        "//systems/lcm:lcm_pubsub_system",
         "@gflags",
     ],
 )
