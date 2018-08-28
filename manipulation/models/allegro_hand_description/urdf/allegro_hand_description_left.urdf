@@ -1,7 +1,24 @@
 <?xml version="1.0" ?>
-<!-- =================================================================================== 
-The file is converted from allegro_hand_description_right.xacro from the ROS package of Allegro Hand (https://github.com/felixduvallet/allegro-hand-ros/tree/master/allegro_hand_description). The model files (.obj files and .mtl files) are converted from the .STL files from the same source. Some modifications on the model are made according to the physical common knowledge - the damping values of the joints are minimized for about 300 times based on the original value. The inertia of all the parts are re-measured using Meshlab and the provided mass. The collision of link_13 is deleted in this version of file because it frequently cases unnecessary collsiions. 
- =================================================================================== -->
+<!-- ==========================================================================
+  The file is converted from allegro_hand_description_left.xacro from the
+  unofficial ROS package of Allegro Hand (https://github.com/felixduvallet/
+  allegro-hand-ros/tree/master/allegro_hand_description). The model files
+  (.obj files and .mtl files) are converted from the .STL files from the same
+  source. The physical parameters of the model in the cited unofficial fork of
+  the Allegro hand have non-physical values. More precisely, many of the
+  inertia matrices are not SPD. Therefore we recomputed all the inertia
+  matrices for this SDF model in Drake. These values are estimated from the
+  provided geometry and using a constant density approximation on each
+  component. We used the best available value of mass available to us. Joint
+  damping values are estimated based on the expected angular velocity of each
+  joint and using a typical load of about 200 gr being held by the hand. This
+  a allow us to estimate a typical torque at the joints which together with a
+  nominal value of angular velocity allow us to estimate a reasonable
+  magnitude for joint damping. It is worth noting that the unofficial version
+  of these files were providing non-physical values as much as 300 times
+  larger.The collision of link_13 is deleted in this version of file because
+  it frequently cases unnecessary collsiions.
+========================================================================== -->
 <robot name="allegro_hand_left" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!-- ============================================================================= -->
   <!-- Base link -->
@@ -58,11 +75,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_8" type="revolute">
     <axis xyz="0 0 -1"/>
-    <limit effort="15" lower="-0.47" upper="0.47" velocity="7"/>
+    <limit effort="0.7" lower="-0.47" upper="0.47" velocity="7"/>
     <parent link="palm_link"/>
     <child link="link_8"/>
     <origin rpy="0.08726646255 0 0" xyz="0 0.0435 -0.001542"/>
-    <dynamics damping="1e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_8_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_8_motor"/>
@@ -91,12 +108,12 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
     </inertial>
   </link>
   <joint name="joint_9" type="revolute">
-    <limit effort="15" lower="-0.196" upper="1.61" velocity="7"/>
+    <limit effort="0.7" lower="-0.196" upper="1.61" velocity="7"/>
     <axis xyz="0 1 0"/>
     <parent link="link_8"/>
     <child link="link_9"/>
     <origin xyz="0 0 0.0164"/>
-    <dynamics damping="1e-2" friction="5"/>
+    <dynamics damping="1.5e-2" friction="5"/>
   </joint>
   <transmission name="joint_9_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_9_motor"/>
@@ -126,11 +143,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_10" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.174" upper="1.709" velocity="7"/>
+    <limit effort="0.7" lower="-0.174" upper="1.709" velocity="7"/>
     <parent link="link_9"/>
     <child link="link_10"/>
     <origin xyz="0 0 0.054"/>
-    <dynamics damping="2.5e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_10_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_10_motor"/>
@@ -160,11 +177,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_11" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.227" upper="1.618" velocity="7"/>
+    <limit effort="0.7" lower="-0.227" upper="1.618" velocity="7"/>
     <parent link="link_10"/>
     <child link="link_11"/>
     <origin xyz="0 0 0.0384"/>
-    <dynamics damping="3.2e-2" friction="12"/>
+    <dynamics damping="1.5e-2" friction="12"/>
   </joint>
   <transmission name="joint_11_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_11_motor"/>
@@ -220,11 +237,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_4" type="revolute">
     <axis xyz="0 0 -1"/>
-    <limit effort="15" lower="-0.47" upper="0.47" velocity="7"/>
+    <limit effort="0.7" lower="-0.47" upper="0.47" velocity="7"/>
     <parent link="palm_link"/>
     <child link="link_4"/>
     <origin rpy="0.0 0 0" xyz="0 0 0.0007"/>
-    <dynamics damping="1e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_4_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_4_motor"/>
@@ -253,12 +270,12 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
     </inertial>
   </link>
   <joint name="joint_5" type="revolute">
-    <limit effort="15" lower="-0.196" upper="1.61" velocity="7"/>
+    <limit effort="0.7" lower="-0.196" upper="1.61" velocity="7"/>
     <axis xyz="0 1 0"/>
     <parent link="link_4"/>
     <child link="link_5"/>
     <origin xyz="0 0 0.0164"/>
-    <dynamics damping="1e-2" friction="5"/>
+    <dynamics damping="1.5e-2" friction="5"/>
   </joint>
   <transmission name="joint_5_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_5_motor"/>
@@ -288,11 +305,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_6" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.174" upper="1.709" velocity="7"/>
+    <limit effort="0.7" lower="-0.174" upper="1.709" velocity="7"/>
     <parent link="link_5"/>
     <child link="link_6"/>
     <origin xyz="0 0 0.054"/>
-    <dynamics damping="2.5e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_6_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_6_motor"/>
@@ -322,11 +339,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_7" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.227" upper="1.618" velocity="7"/>
+    <limit effort="0.7" lower="-0.227" upper="1.618" velocity="7"/>
     <parent link="link_6"/>
     <child link="link_7"/>
     <origin xyz="0 0 0.0384"/>
-    <dynamics damping="3.2e-2" friction="12"/>
+    <dynamics damping="1.5e-2" friction="12"/>
   </joint>
   <transmission name="joint_7_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_7_motor"/>
@@ -382,11 +399,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_0" type="revolute">
     <axis xyz="0 0 -1"/>
-    <limit effort="15" lower="-0.47" upper="0.47" velocity="7"/>
+    <limit effort="0.7" lower="-0.47" upper="0.47" velocity="7"/>
     <parent link="palm_link"/>
     <child link="link_0"/>
     <origin rpy="0.08726646255 0 0" xyz="0 -0.0435 -0.001542"/>
-    <dynamics damping="1e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_0_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_0_motor"/>
@@ -415,12 +432,12 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
     </inertial>
   </link>
   <joint name="joint_1" type="revolute">
-    <limit effort="15" lower="-0.196" upper="1.61" velocity="7"/>
+    <limit effort="0.7" lower="-0.196" upper="1.61" velocity="7"/>
     <axis xyz="0 1 0"/>
     <parent link="link_0"/>
     <child link="link_1"/>
     <origin xyz="0 0 0.0164"/>
-    <dynamics damping="1e-2" friction="5"/>
+    <dynamics damping="1.5e-2" friction="5"/>
   </joint>
   <transmission name="joint_1_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_1_motor"/>
@@ -450,11 +467,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_2" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.174" upper="1.709" velocity="7"/>
+    <limit effort="0.7" lower="-0.174" upper="1.709" velocity="7"/>
     <parent link="link_1"/>
     <child link="link_2"/>
     <origin xyz="0 0 0.054"/>
-    <dynamics damping="2.5e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_2_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_2_motor"/>
@@ -484,11 +501,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_3" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.227" upper="1.618" velocity="7"/>
+    <limit effort="0.7" lower="-0.227" upper="1.618" velocity="7"/>
     <parent link="link_2"/>
     <child link="link_3"/>
     <origin xyz="0 0 0.0384"/>
-    <dynamics damping="3.2e-2" friction="12"/>
+    <dynamics damping="1.5e-2" friction="12"/>
   </joint>
   <transmission name="joint_3_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_3_motor"/>
@@ -547,11 +564,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_12" type="revolute">
     <axis xyz="1 0 0"/>
-    <limit effort="15" lower="0.263" upper="1.396" velocity="7"/>
+    <limit effort="0.7" lower="0.263" upper="1.396" velocity="7"/>
     <parent link="palm_link"/>
     <child link="link_12"/>
     <origin rpy="0 -1.65806278845 1.5707963259" xyz="-0.0182 -0.019333 -0.045987"/>
-    <dynamics damping="1e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_12_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_12_motor"/>
@@ -583,11 +600,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_13" type="revolute">
     <axis xyz="0 0 -1"/>
-    <limit effort="15" lower="-0.105" upper="1.163" velocity="7"/>
+    <limit effort="0.7" lower="-0.105" upper="1.163" velocity="7"/>
     <parent link="link_12"/>
     <child link="link_13"/>
     <origin xyz="-0.027 -0.005 0.0399"/>
-    <dynamics damping="1e-2" friction="5"/>
+    <dynamics damping="1.5e-2" friction="5"/>
   </joint>
   <transmission name="joint_13_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_13_motor"/>
@@ -618,11 +635,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_14" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.189" upper="1.644" velocity="7"/>
+    <limit effort="0.7" lower="-0.189" upper="1.644" velocity="7"/>
     <parent link="link_13"/>
     <child link="link_14"/>
     <origin xyz="0 0 0.0177"/>
-    <dynamics damping="1e-2" friction="10"/>
+    <dynamics damping="1.5e-2" friction="10"/>
   </joint>
   <transmission name="joint_14_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_14_motor"/>
@@ -653,11 +670,11 @@ The file is converted from allegro_hand_description_right.xacro from the ROS pac
   </link>
   <joint name="joint_15" type="revolute">
     <axis xyz="0 1 0"/>
-    <limit effort="15" lower="-0.162" upper="1.719" velocity="7"/>
+    <limit effort="0.7" lower="-0.162" upper="1.719" velocity="7"/>
     <parent link="link_14"/>
     <child link="link_15"/>
     <origin xyz="0 0 0.0514"/>
-    <dynamics damping="1e-2" friction="12"/>
+    <dynamics damping="1.5e-2" friction="12"/>
   </joint>
   <transmission name="joint_15_trans" type="transmission_interface/SimpleTransmission">
     <actuator name="joint_15_motor"/>

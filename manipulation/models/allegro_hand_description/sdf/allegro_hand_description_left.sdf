@@ -1,6 +1,24 @@
 <?xml version='1.0'?>
 <!--
-  The file is converted from allegro_hand_description_right.xacro from the ROS package of Allegro Hand (https://github.com/felixduvallet/allegro-hand-ros/tree/master/allegro_hand_description). The model files (.obj files and .mtl files) are converted from the .STL files from the same source. Some modifications on the model are made according to the physical common knowledge - the damping values of the joints are minimized for about 300 times based on the original value. The inertia of all the parts are re-measured using Meshlab and the provided mass. The collision of link_13 is deleted in this version of file because it frequently cases unnecessary collsiions. 
+  The file is converted from allegro_hand_description_left.xacro from the
+  unofficial ROS package of Allegro Hand (https://github.com/felixduvallet/
+  allegro-hand-ros/tree/master/allegro_hand_description). The model files
+  (.obj files and .mtl files) are converted from the .STL files from the same
+  source. The physical parameters of the model in the cited unofficial fork of
+  the Allegro hand have non-physical values. More precisely, many of the
+  inertia matrices are not SPD. Therefore we recomputed all the inertia
+  matrices for this SDF model in Drake. These values are estimated from the
+  provided geometry and using a constant density approximation on each
+  component. We used the best available value of mass available to us. Joint
+  damping values are estimated based on the expected angular velocity of each
+  joint and using a typical load of about 200 gr being held by the hand. This
+  a allow us to estimate a typical torque at the joints which together with a
+  nominal value of angular velocity allow us to estimate a reasonable
+  magnitude for joint damping. It is worth noting that the unofficial version
+  of these files were providing non-physical values as much as 300 times
+  larger. The effort limits of the joints are justified to 0.7 Nm according to
+  the manufacturer's specs. The collision of link_13 (thumb base) is deleted
+  in this version of file because it frequently cases unnecessary collsiions.
 -->
 <sdf version='1.6'>
   <model name='allegro_hand_left'>
@@ -76,14 +94,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -128,14 +142,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>5</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -180,14 +190,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>2.5e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -249,14 +255,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>3.2e-2</damping>
-          <friction>12</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -301,14 +303,10 @@
         <limit>
           <lower>0.263</lower>
           <upper>1.396</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -355,14 +353,10 @@
         <limit>
           <lower>-0.105</lower>
           <upper>1.163</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>5</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -407,14 +401,10 @@
         <limit>
           <lower>-0.189</lower>
           <upper>1.644</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -476,14 +466,10 @@
         <limit>
           <lower>-0.162</lower>
           <upper>1.719</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>12</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -528,14 +514,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -580,14 +562,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>5</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -598,12 +576,12 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <mass>0.0355</mass>
         <inertia>
-          <ixx>     3.169e-05</ixx>
-          <ixy> 0.0001071e-05</ixy>
-          <ixz>-0.0004913e-05</ixz>
-          <iyy>     3.105e-05</iyy>
-          <iyz>  0.003875e-05</iyz>
-          <izz>    0.3203e-05</izz>
+          <ixx>   3.169e-05</ixx>
+          <ixy> 0.00011e-05</ixy>
+          <ixz>-0.00049e-05</ixz>
+          <iyy>   3.105e-05</iyy>
+          <iyz>0.003875e-05</iyz>
+          <izz>  0.3203e-05</izz>
         </inertia>
       </inertial>
       <collision name='link_6_collision'>
@@ -632,14 +610,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>2.5e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -701,14 +675,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>3.2e-2</damping>
-          <friction>12</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -753,14 +723,10 @@
         <limit>
           <lower>-0.47</lower>
           <upper>0.47</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -805,14 +771,10 @@
         <limit>
           <lower>-0.196</lower>
           <upper>1.61</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>1e-2</damping>
-          <friction>5</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -857,14 +819,10 @@
         <limit>
           <lower>-0.174</lower>
           <upper>1.709</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>2.5e-2</damping>
-          <friction>10</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
@@ -926,14 +884,10 @@
         <limit>
           <lower>-0.227</lower>
           <upper>1.618</upper>
-          <effort>15</effort>
-          <velocity>7</velocity>
+          <effort>0.7</effort>
         </limit>
         <dynamics>
-          <damping>3.2e-2</damping>
-          <friction>12</friction>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
+          <damping>1.5e-2</damping>
         </dynamics>
         <use_parent_model_frame>1</use_parent_model_frame>
       </axis>
