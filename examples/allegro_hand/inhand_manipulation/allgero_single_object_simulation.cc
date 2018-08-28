@@ -1,9 +1,9 @@
 /// @file
 ///
-/// This demo sets up a simple dynamic simulation for the Allegro hand using
-/// the multi-body library. The joint torques are constant values that can be
-/// set manually, and is the same for all the joints. This demo also allows to
-/// specify whether the right or left hand is simulated.
+/// This file set up a simulation environment of an allegro hand an object. It
+/// is intended to be a be a direct replacement for the Allegro Hand driver and
+/// the actual robot hardware. The only controllable interface in this instance
+/// is the joints on the hand.
 
 #include <gflags/gflags.h>
 
@@ -29,20 +29,12 @@ namespace {
 
 using drake::multibody::multibody_plant::MultibodyPlant;
 
-DEFINE_double(constant_load, 0, "the constant load on each joint, Unit [Nm]."
-              "Suggested load is in the order of 0.01 Nm. When input value"
-              "equals to 0 (default), the program runs a passive simulation.");
-
-DEFINE_double(simulation_time, 5, 
+DEFINE_double(simulation_time, std::numeric_limits<double>::infinity(),
               "Desired duration of the simulation in seconds");
-
 DEFINE_string(test_hand, "right", "Which hand to model: 'left' or 'right'");
-
-DEFINE_double(max_time_step, 1.0e-4, "Simulation time step used for intergrator.");
-
+DEFINE_double(max_time_step, 1.5e-4, "Simulation time step used for intergrator.");
 DEFINE_bool(add_gravity, true,
             "Whether adding gravity (9.81 m/s^2) in the simulation");
-
 DEFINE_double(target_realtime_rate, 1,
               "Desired rate relative to real time.  See documentation for "
               "Simulator::set_target_realtime_rate() for details.");
@@ -51,6 +43,7 @@ void DoMain() {
   DRAKE_DEMAND(FLAGS_simulation_time > 0);
 
   systems::DiagramBuilder<double> builder;
+  lcm::DrakeLcm lcm;
 
   geometry::SceneGraph<double>& scene_graph = 
       *builder.AddSystem<geometry::SceneGraph>();
@@ -61,10 +54,14 @@ void DoMain() {
   const std::string full_name = FindResourceOrThrow("drake/manipulation/models"
                   "/allegro_hand_description/sdf/allegro_hand_description_"
                   + FLAGS_test_hand + ".sdf");
+  const std::string ObjectModelPath = "drake/examples/allegro_hand/grasp/"
+                                      "models/objects/simple_mug.sdf";
   multibody::parsing::AddModelFromSdfFile(
                           full_name, &plant, &scene_graph);
 
   // Weld the hand to the world frame
+  // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
+  // the 3D space
   const auto& joint_hand_root = plant.GetBodyByName("hand_root");
   plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {},
       joint_hand_root, {}, Isometry3<double>::Identity());
@@ -74,14 +71,7 @@ void DoMain() {
     plant.AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
 
-  // Now the model is complete.
-  plant.Finalize(&scene_graph);
-
-  DRAKE_DEMAND(plant.num_actuators() == 16);
-  DRAKE_DEMAND(plant.num_actuated_dofs() == 16);
-
   // Visualization
-  lcm::DrakeLcm lcm;
   geometry::ConnectVisualization(scene_graph, &builder, &lcm);
   DRAKE_DEMAND(!!plant.get_source_id());
   builder.Connect(plant.get_geometry_poses_output_port(),
@@ -89,16 +79,67 @@ void DoMain() {
   builder.Connect(scene_graph.get_query_output_port(),
                   plant.get_geometry_query_input_port());
 
-  // constant force input
-  VectorX<double> constant_load_value = VectorX<double>::Ones(
-      plant.model().num_actuators()) * FLAGS_constant_load;
-  auto constant_source =
-     builder.AddSystem<systems::ConstantVectorSource<double>>(
-      constant_load_value);
-  constant_source->set_name("constant_source");
-  builder.Connect(constant_source->get_output_port(), 
-                  plant.get_actuation_input_port());
+  // Publish contact results for visualization.
+  const auto& contact_results_to_lcm = *builder.AddSystem<
+      multibody::multibody_plant::ContactResultsToLcmSystem>(plant);
+  const auto& contact_results_publisher = *builder.AddSystem(
+      systems::lcm::LcmPublisherSystem::Make<lcmt_contact_results_for_viz>
+      ("CONTACT_RESULTS", &lcm));
+  // Contact results to lcm msg.
+  builder.Connect(plant.get_contact_results_output_port(),
+                  contact_results_to_lcm.get_input_port(0));
+  builder.Connect(contact_results_to_lcm.get_output_port(0),
+                  contact_results_publisher.get_input_port());
 
+  // Controller
+  VectorX<double> kp, kd, ki;
+  MatrixX<double> Px, Py;
+  GetControlPortMapping(plant, Px, Py);
+  SetPositionControlledGains(&kp, &ki, &kd);
+  auto controller = builder.AddSystem<
+      systems::controllers::PidController>(Px, Py, kp, ki, kd); 
+  builder.Connect(plant.get_continuous_state_output_port(),
+                 controller->get_input_port_estimated_state());
+  builder.Connect(controller->get_output_port_control(),
+                 plant.get_actuation_input_port());  
+
+std::cout<<"set controller"<<std::endl;
+
+    // Create the command subscriber and status publisher.
+  auto command_sub = builder->AddSystem(
+      systems::lcm::LcmSubscriberSystem::Make<lcmt_iiwa_command>("IIWA_COMMAND",
+                                                                 &lcm));
+  command_sub->set_name("command_subscriber");
+  auto command_receiver =
+      base_builder->AddSystem<IiwaCommandReceiver>(num_joints);
+  command_receiver->set_name("command_receiver");
+  std::vector<int> iiwa_instances =
+      {RigidBodyTreeConstants::kFirstNonWorldModelInstanceId};
+  auto external_torque_converter =
+      base_builder->AddSystem<IiwaContactResultsToExternalTorque>(
+          tree, iiwa_instances);
+  auto status_pub = base_builder->AddSystem(
+      systems::lcm::LcmPublisherSystem::Make<lcmt_iiwa_status>("IIWA_STATUS",
+                                                               &lcm));
+  status_pub->set_name("status_publisher");
+  status_pub->set_publish_period(kIiwaLcmStatusPeriod);
+  auto status_sender = base_builder->AddSystem<IiwaStatusSender>(num_joints);
+  status_sender->set_name("status_sender");
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Now the model is complete.
+  plant.Finalize(&scene_graph);
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
   geometry::DispatchLoadMessage(scene_graph, &lcm);
 
@@ -108,18 +149,6 @@ void DoMain() {
   diagram->SetDefaultContext(diagram_context.get());
   systems::Context<double>& plant_context =
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
-
-  // Initialize joint angle. 3 joints on the index, middle and ring fingers
-  // are set to some random values.
-  const multibody::RevoluteJoint<double>& joint_finger_1_root =
-      plant.GetJointByName<multibody::RevoluteJoint>("joint_1");
-  joint_finger_1_root.set_angle(&plant_context, 0.5);
-  const multibody::RevoluteJoint<double>& joint_finger_2_middle =
-      plant.GetJointByName<multibody::RevoluteJoint>("joint_6");
-  joint_finger_2_middle.set_angle(&plant_context, -0.1);
-  const multibody::RevoluteJoint<double>& joint_finger_3_tip =
-      plant.GetJointByName<multibody::RevoluteJoint>("joint_11");
-  joint_finger_3_tip.set_angle(&plant_context, 0.5);
 
   // Set up simulator.
   systems::Simulator<double> simulator(*diagram, std::move(diagram_context));
