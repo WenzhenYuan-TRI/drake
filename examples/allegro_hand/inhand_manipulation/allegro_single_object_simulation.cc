@@ -10,17 +10,28 @@
 #include "drake/common/drake_assert.h"
 #include "drake/common/find_resource.h"
 #include "drake/common/text_logging_gflags.h"
+#include "drake/examples/allegro_hand/allegro_common.h"
+#include "drake/examples/allegro_hand/allegro_lcm.h"
+#include "drake/lcm/drake_lcm.h"  
+#include "drake/lcmt_allegro_command.hpp"
+#include "drake/lcmt_allegro_status.hpp"
 #include "drake/geometry/geometry_visualization.h"
+#include "drake/math/rotation_matrix.h"
 #include "drake/multibody/multibody_tree/joints/revolute_joint.h"
 #include "drake/multibody/multibody_tree/joints/weld_joint.h"
+#include "drake/multibody/multibody_tree/multibody_plant/contact_results.h"
+#include "drake/multibody/multibody_tree/multibody_plant/contact_results_to_lcm.h"
 #include "drake/multibody/multibody_tree/multibody_plant/multibody_plant.h"
 #include "drake/multibody/multibody_tree/parsing/multibody_plant_sdf_parser.h"
 #include "drake/multibody/multibody_tree/uniform_gravity_field_element.h"
 #include "drake/lcm/drake_lcm.h"
 #include "drake/systems/analysis/simulator.h"
+#include "drake/systems/controllers/pid_controller.h"
 #include "drake/systems/framework/diagram.h"
 #include "drake/systems/framework/diagram_builder.h"
-#include "drake/systems/primitives/constant_vector_source.h"
+#include "drake/systems/lcm/lcm_publisher_system.h"
+#include "drake/systems/lcm/lcm_subscriber_system.h"
+#include "drake/systems/primitives/matrix_gain.h"
 
 namespace drake {
 namespace examples {
@@ -33,7 +44,7 @@ DEFINE_double(simulation_time, std::numeric_limits<double>::infinity(),
               "Desired duration of the simulation in seconds");
 DEFINE_string(test_hand, "right", "Which hand to model: 'left' or 'right'");
 DEFINE_double(max_time_step, 1.5e-4, "Simulation time step used for intergrator.");
-DEFINE_bool(add_gravity, true,
+DEFINE_bool(add_gravity, false,
             "Whether adding gravity (9.81 m/s^2) in the simulation");
 DEFINE_double(target_realtime_rate, 1,
               "Desired rate relative to real time.  See documentation for "
@@ -51,13 +62,13 @@ void DoMain() {
 
   MultibodyPlant<double>& plant = *builder.AddSystem<MultibodyPlant>
                                   (FLAGS_max_time_step);
-  const std::string full_name = FindResourceOrThrow("drake/manipulation/models"
+  const std::string HandSdfPath = FindResourceOrThrow("drake/manipulation/models"
                   "/allegro_hand_description/sdf/allegro_hand_description_"
                   + FLAGS_test_hand + ".sdf");
-  const std::string ObjectModelPath = "drake/examples/allegro_hand/grasp/"
-                                      "models/objects/simple_mug.sdf";
-  multibody::parsing::AddModelFromSdfFile(
-                          full_name, &plant, &scene_graph);
+  const std::string ObjectModelPath = FindResourceOrThrow("drake/examples/"
+                  "allegro_hand/inhand_manipulation/models/objects/simple_mug.sdf");
+  multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
+  multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
 
   // Weld the hand to the world frame
   // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
@@ -70,6 +81,7 @@ void DoMain() {
   if (FLAGS_add_gravity)
     plant.AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
+  plant.Finalize(&scene_graph);
 
   // Visualization
   geometry::ConnectVisualization(scene_graph, &builder, &lcm);
@@ -96,65 +108,99 @@ void DoMain() {
   MatrixX<double> Px, Py;
   GetControlPortMapping(plant, Px, Py);
   SetPositionControlledGains(&kp, &ki, &kd);
-  auto controller = builder.AddSystem<
+  auto hand_controller = builder.AddSystem<
       systems::controllers::PidController>(Px, Py, kp, ki, kd); 
   builder.Connect(plant.get_continuous_state_output_port(),
-                 controller->get_input_port_estimated_state());
-  builder.Connect(controller->get_output_port_control(),
+                 hand_controller->get_input_port_estimated_state());
+  builder.Connect(hand_controller->get_output_port_control(),
                  plant.get_actuation_input_port());  
 
-std::cout<<"set controller"<<std::endl;
+  // Creat an output port from the plant that only outputs the status of the
+  // hand fingers
+  const auto hand_status_converter = 
+      builder.AddSystem<systems::MatrixGain<double>>(Px);
+  builder.Connect(plant.get_continuous_state_output_port(),
+                  hand_status_converter->get_input_port());
+  const auto hand_output_torque_converter = 
+      builder.AddSystem<systems::MatrixGain<double>>(Py);
+  builder.Connect(hand_controller->get_output_port_control(),
+                  hand_output_torque_converter->get_input_port());
 
-    // Create the command subscriber and status publisher.
-  auto command_sub = builder->AddSystem(
-      systems::lcm::LcmSubscriberSystem::Make<lcmt_iiwa_command>("IIWA_COMMAND",
-                                                                 &lcm));
-  command_sub->set_name("command_subscriber");
-  auto command_receiver =
-      base_builder->AddSystem<IiwaCommandReceiver>(num_joints);
-  command_receiver->set_name("command_receiver");
-  std::vector<int> iiwa_instances =
-      {RigidBodyTreeConstants::kFirstNonWorldModelInstanceId};
-  auto external_torque_converter =
-      base_builder->AddSystem<IiwaContactResultsToExternalTorque>(
-          tree, iiwa_instances);
-  auto status_pub = base_builder->AddSystem(
-      systems::lcm::LcmPublisherSystem::Make<lcmt_iiwa_status>("IIWA_STATUS",
-                                                               &lcm));
-  status_pub->set_name("status_publisher");
-  status_pub->set_publish_period(kIiwaLcmStatusPeriod);
-  auto status_sender = base_builder->AddSystem<IiwaStatusSender>(num_joints);
+
+  // Create the command subscriber and status publisher.
+  // External torque measurement is not abalable here
+  auto hand_command_sub = builder.AddSystem(
+      systems::lcm::LcmSubscriberSystem::Make<lcmt_allegro_command>(
+      "ALLEGRO_COMMAND", &lcm));
+  hand_command_sub->set_name("hand_command_subscriber");
+  auto hand_command_receiver =
+      builder.AddSystem<AllegroCommandReceiver>(kAllegroNumJoints);
+  hand_command_receiver->set_name("hand_command_receiver");
+  auto hand_status_pub = builder.AddSystem(
+      systems::lcm::LcmPublisherSystem::Make<lcmt_allegro_status>(
+                                                  "ALLEGRO_STATUS", &lcm));
+  hand_status_pub->set_name("hand_status_publisher");
+  hand_status_pub->set_publish_period(kLcmStatusPeriod);
+  auto status_sender = builder.AddSystem<AllegroStatusSender>(
+                                                      kAllegroNumJoints);
   status_sender->set_name("status_sender");
 
-
-
-
-
-
-
-
-
-
-
-
+  builder.Connect(hand_command_sub->get_output_port(),
+                    hand_command_receiver->get_input_port(0));
+  builder.Connect(hand_command_receiver->get_commanded_state_output_port(),
+                    hand_controller->get_input_port_desired_state());
+  builder.Connect(hand_status_converter->get_output_port(),
+                    status_sender->get_state_input_port());
+  builder.Connect(hand_command_receiver->get_output_port(0),
+                    status_sender->get_command_input_port());
+  builder.Connect(hand_output_torque_converter->get_output_port(),
+                    status_sender->get_commanded_torque_input_port());
+  builder.Connect(status_sender->get_output_port(0),
+                    hand_status_pub->get_input_port());
 
   // Now the model is complete.
-  plant.Finalize(&scene_graph);
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
   geometry::DispatchLoadMessage(scene_graph, &lcm);
-
   // Create a context for this system:
   std::unique_ptr<systems::Context<double>> diagram_context =
       diagram->CreateDefaultContext();
   diagram->SetDefaultContext(diagram_context.get());
+  // systems::Context<double>& plant_context =
+  //     diagram->GetMutableSubsystemContext(plant, diagram_context.get());
+
+
+  // object position
+  const multibody::Body<double>& mug = plant.GetBodyByName("main_body");
+  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
   systems::Context<double>& plant_context =
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
+
+  // Initialize the mug pose to be right in the middle between the fingers.
+  std::vector<Eigen::Isometry3d> X_WB_all;
+  plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
+  const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
+  Eigen::Isometry3d X_WM;
+  Eigen::Vector3d rpy( M_PI /2, 0, 0);
+  X_WM.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
+  X_WM.translation() = p_WHand + Eigen::Vector3d(0.055, 0.05, 0.08);
+  X_WM.makeAffine();
+  plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
+  std::cout<<mug.index();
+
+  lcm.StartReceiveThread();
 
   // Set up simulator.
   systems::Simulator<double> simulator(*diagram, std::move(diagram_context));
   simulator.set_publish_every_time_step(true);
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.Initialize();
+
+  hand_command_receiver->set_initial_position(
+      &diagram->GetMutableSubsystemContext(*hand_command_receiver,
+                                           &simulator.get_mutable_context()),
+      VectorX<double>::Zero(plant.num_actuators()));
+
+
   simulator.StepTo(FLAGS_simulation_time);
 }  // main
 
@@ -169,4 +215,5 @@ int main(int argc, char* argv[]) {
       " torques.");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   drake::examples::allegro_hand::DoMain();
+  return 0;
 }
