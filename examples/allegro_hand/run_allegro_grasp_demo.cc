@@ -75,8 +75,8 @@ int DoMain() {
 
   const std::string HandSdfPath = "drake/manipulation/models/allegro_hand_"
       "description/sdf/allegro_hand_description_" + FLAGS_test_hand + ".sdf";
-  const std::string ObjectModelPath = "drake/examples/allegro_hand/grasp/"
-      "models/objects/simple_mug.sdf";
+  const std::string ObjectModelPath = "drake/examples/allegro_hand/"
+                            "inhand_manipulation/models/objects/simple_mug.sdf";
 
   // build the scene and the hand model
   geometry::SceneGraph<double>& scene_graph = 

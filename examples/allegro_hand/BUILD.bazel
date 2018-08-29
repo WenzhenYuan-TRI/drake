@@ -22,6 +22,20 @@ drake_cc_library(
 )
 
 drake_cc_library(
+    name = "allegro_lcm",
+    srcs = ["allegro_lcm.cc"],
+    hdrs = ["allegro_lcm.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":allegro_common",
+        "//common/trajectories:piecewise_polynomial",
+        "//lcmtypes:allegro",
+        "//systems/framework:leaf_system",
+    ],
+)
+
+
+drake_cc_library(
     name = "allegro_set_joint_pose",
     srcs = ["allegro_set_joint_pose.cc"],
     hdrs = ["allegro_set_joint_pose.h"],
