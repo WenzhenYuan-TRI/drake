@@ -56,4 +56,19 @@ drake_cc_binary(
     ],
 )
 
+drake_cc_binary(
+    name = "state_detection_test",
+    srcs = ["state_detection_test.cc"],
+    deps = [
+        "//examples/allegro_hand:allegro_common",
+        "//examples/allegro_hand:allegro_lcm",
+        "//lcm",
+        "//lcmtypes:allegro",
+        "@gflags",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
+
+
 add_lint_tests()
