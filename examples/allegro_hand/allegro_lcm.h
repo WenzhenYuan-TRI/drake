@@ -21,7 +21,7 @@ namespace allegro_hand {
 // This value is chosen to match the value in getSendPeriodMilliSec()
 // when initializing the FRI configuration on the iiwa's control
 // cabinet.
-const double kLcmStatusPeriod = 0.005;
+const double kLcmStatusPeriod = 0.003;
 
 /// Handles lcmt_allegro_command messages from a LcmSubscriberSystem.
 /// Has two output ports: one for the commanded position for each joint along

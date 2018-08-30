@@ -41,4 +41,19 @@ drake_cc_binary(
     ],
 )
 
+drake_cc_binary(
+    name = "lcm_simulation_test",
+    srcs = ["lcm_simulation_test.cc"],
+    deps = [
+        "//examples/allegro_hand:allegro_common",
+        "//examples/allegro_hand:allegro_lcm",
+        "//lcm",
+        "//lcmtypes:allegro",
+        "//systems/lcm:lcm_pubsub_system",
+        "@gflags",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
+
 add_lint_tests()
