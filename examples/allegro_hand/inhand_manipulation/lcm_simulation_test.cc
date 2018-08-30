@@ -21,9 +21,6 @@ class ConstantPositionInput{
     ConstantPositionInput(){
         lcm_.subscribe(kLcmStatusChannel,
                     &ConstantPositionInput::HandleStatus, this);
-        lcm_.subscribe(kLcmCommandChannel,
-                    &ConstantPositionInput::HandleTestReceive, this);
-        std::cout<<"boring.......";
     }
 
     void Run() {
@@ -39,30 +36,20 @@ class ConstantPositionInput{
                                         0.1,   1.6,  1.7, 1.};
 
         while (true){
-          // publish only one constant status
-          // for (int joint = 0; joint < kAllegroNumJoints; joint++) {
-          //   allegro_command.joint_position[joint] = const_position[joint];
-          // }
+          while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
+
           allegro_command.utime = allegro_status_.utime;
           lcm_.publish(kLcmCommandChannel, &allegro_command);
-          sleep(1);
+          sleep(0.1);
         }
     }
 
   private:
   void HandleStatus(const ::lcm::ReceiveBuffer*, const std::string&,
                     const lcmt_allegro_status* status) {
-
-    std::cout<<"SOMETHING"<<std::endl;
     allegro_status_ = *status;    
     std::cout<<allegro_status_.joint_position_measured[0]<<std::endl;
     std::cout<<allegro_status_.joint_torque_commanded[0]<<std::endl<<std::endl;
-  }
-  void HandleTestReceive(const ::lcm::ReceiveBuffer*, const std::string&,
-                    const lcmt_allegro_command* command) {
-
-    std::cout<<"Command received"<<std::endl;
-    std::cout<<command->joint_position[0]<<std::endl;
   }
 
   ::lcm::LCM lcm_;
