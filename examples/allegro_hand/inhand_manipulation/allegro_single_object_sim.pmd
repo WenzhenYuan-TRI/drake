@@ -1,0 +1,24 @@
+group "0.sim" {
+
+  cmd "0.hand_and_single_object_simulation" {
+    exec = "bazel-bin/examples/allegro_hand/inhand_manipulation/allegro_single_object_simulation";
+    host = "localhost";
+  }
+
+  cmd "1.test_constant_input" {
+    exec = "bazel-bin/examples/allegro_hand/inhand_manipulation/lcm_simulation_test";
+    host = "localhost";
+  }
+
+group "1.tools" {
+
+  cmd "0.drake-visualizer" {
+    exec = "bazel-bin/tools/drake_visualizer --script multibody/rigid_body_plant/visualization/show_time.py --script multibody/rigid_body_plant/visualization/contact_viz.py --script bazel-enabling-anzu/external/drake/multibody/rigid_body_plant/visualization/show_frames.py";
+    host = "localhost";
+  }
+
+  cmd "1.lcm-spy"{
+    exec = "drake-build/install/bin/lcm-spy";
+    host = "localhost";
+  }
+}
