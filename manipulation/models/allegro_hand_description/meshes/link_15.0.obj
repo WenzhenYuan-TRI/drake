@@ -1,7 +1,7 @@
 # File produced by Open Asset Import Library (http://www.assimp.sf.net)
 # (assimp v3.1.187496374)
 
-mtllib link_15.0.obj.mtl
+mtllib link.mtl
 
 # 443 vertex positions
 v  0.0005 -0.000766025 0.0313
@@ -1016,7 +1016,7 @@ vn -0.980785 1.73752e-18 0.19509
 
 # Mesh '<STL_BINARY>' with 864 faces
 g <STL_BINARY>
-usemtl DefaultMaterial
+usemtl AluminumBodyMaterial
 f  1//1 2//1 3//1
 f  1//1 4//1 2//1
 f  3//2 2//2 5//2

@@ -33,11 +33,11 @@ GTEST_TEST(AllegroHandTest, TestTree) {
   auto tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
      kPathRight, multibody::joints::kFixed, tree.get());
-  test_hand_model(*tree.get());
+  test_hand_model(*tree);
   tree = std::make_unique<RigidBodyTree<double>>();
   parsers::urdf::AddModelInstanceFromUrdfFileToWorld(
      kPathLeft, multibody::joints::kFixed, tree.get());
-  test_hand_model(*tree.get());
+  test_hand_model(*tree);
 }
 
 }  // namespace

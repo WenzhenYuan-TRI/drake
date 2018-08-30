@@ -2,23 +2,26 @@
 <!--
   The file is converted from allegro_hand_description_right.xacro from the
   unofficial ROS package of Allegro Hand (https://github.com/felixduvallet/
-  allegro-hand-ros/tree/master/allegro_hand_description). The model files
-  (.obj files and .mtl files) are converted from the .STL files from the same
-  source. The physical parameters of the model in the cited unofficial fork of
-  the Allegro hand have non-physical values. More precisely, many of the
-  inertia matrices are not SPD. Therefore we recomputed all the inertia
-  matrices for this SDF model in Drake. These values are estimated from the
-  provided geometry and using a constant density approximation on each
-  component. We used the best available value of mass available to us. Joint
-  damping values are estimated based on the expected angular velocity of each
-  joint and using a typical load of about 200 gr being held by the hand. This
-  a allow us to estimate a typical torque at the joints which together with a
-  nominal value of angular velocity allow us to estimate a reasonable
-  magnitude for joint damping. It is worth noting that the unofficial version
-  of these files were providing non-physical values as much as 300 times
-  larger. The effort limits of the joints are justified to 0.7 Nm according to
-  the manufacturer's specs. The collision of link_13 (thumb base) is deleted
-  in this version of file because it frequently cases unnecessary collsiions.
+  allegro-hand-ros/tree/master/allegro_hand_description). The conversion is
+  applied using the ROS package xacro to convert into urdf files, then
+  converted to sdf files. The model files (.obj files and .mtl files) are
+  converted from the .STL files from the same source. The physical parameters
+  of the model in the cited unofficial fork of the Allegro hand have
+  non-physical values. More precisely, many of the inertia matrices are not
+  SPD. Therefore we recomputed all the inertia matrices for this SDF model in
+  Drake. These values are estimated from the provided geometry and using a
+  constant density approximation on each component. We used the best available
+  value of mass available to us. Joint damping values are estimated based on
+  the expected angular velocity of each joint and using a typical load of
+  about 200 gr being held by the hand. This allows us to estimate a typical
+  torque at the joints which, together with a nominal value of angular
+  velocity, allows us to estimate a reasonable magnitude for joint damping. It
+  is worth noting that the unofficial version of these files were providing
+  non-physical values as much as 300 times larger. The effort limits of the
+  joints are justified to 0.7 Nm according to the manufacturer's specs (
+  http://www.simlab.co.kr/Allegro-Hand.htm#Specifications). The collision of
+  link_13 (thumb base) is deleted in this version of file because it requently
+  causes unnecessary collisions.
 -->
 <sdf version='1.6'>
   <model name='allegro_hand_right'>
@@ -848,7 +851,7 @@
             <size>0.0196 0.0275 0.0267</size>
           </box>
         </geometry>
-	    </collision>
+      </collision>
       <collision name='link_11_tip_collision_1'>
         <pose frame=''>0 0 0.0267 0 -0 0</pose>
         <geometry>
