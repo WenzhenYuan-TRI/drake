@@ -15,12 +15,12 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
   // torques. These are set to high values to ensure good tracking. These gains
   // are picked arbitrarily.
   Kp->resize(kAllegroNumJoints);
-  *Kp = Eigen::VectorXd::Ones(kAllegroNumJoints) * 0.5;
+  *Kp = Eigen::VectorXd::Ones(kAllegroNumJoints) * 0.05;
   Kd->resize(Kp->size());
   for (int i = 0; i < Kp->size(); i++) {
-    (*Kd)[i] = 5e-2;
+    (*Kd)[i] = 5e-3;
   }
-  (*Kp)[0] = 0.8;
+  (*Kp)[0] = 0.08;
   *Ki = Eigen::VectorXd::Zero(kAllegroNumJoints);
 }
 

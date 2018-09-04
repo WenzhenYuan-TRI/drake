@@ -46,6 +46,17 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "allegro_hand_state",
+    srcs = ["allegro_hand_state.cc"],
+    hdrs = ["allegro_hand_state.h"],
+    deps = [
+        ":allegro_common",
+        ":allegro_lcm",
+        "//lcmtypes:allegro",
+        "//lcm",
+    ],
+)
 
 drake_cc_binary(
     name = "run_allegro_constant_load_demo",

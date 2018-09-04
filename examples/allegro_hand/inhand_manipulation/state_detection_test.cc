@@ -9,7 +9,10 @@
 #include "drake/lcmt_allegro_status.hpp"
 
 #include <iostream>
+#include <iomanip>  
 #include <Eigen/Dense>
+
+
 
 namespace drake {
 namespace examples {
@@ -19,6 +22,18 @@ namespace {
 const char* const kLcmStatusChannel = "ALLEGRO_STATUS";
 const char* const kLcmCommandChannel = "ALLEGRO_COMMAND";
 
+void print_hand_state(Eigen::VectorXd a)
+{ 
+  std::cout << std::scientific<<
+    std::setprecision(3)<<std::setw(8)<< a.segment(0, 4).transpose()<<"    "<<
+    std::setprecision(3)<<std::setw(8)<<a.segment(5, 3).transpose()<<"    "<<
+    std::setprecision(3)<<std::setw(8)<<a.segment(9, 3).transpose()<<"    "<<
+    std::setprecision(3)<<std::setw(8)<<a.segment(13, 3).transpose()<<"    "<<
+    std::endl;  
+  }
+
+
+
 class ConstantPositionInput{
   public:
     ConstantPositionInput(){
@@ -27,7 +42,6 @@ class ConstantPositionInput{
     }
 
     void Run() {
-        lcmt_allegro_command allegro_command;
         allegro_command.num_joints = kAllegroNumJoints;
         allegro_command.joint_position.resize(kAllegroNumJoints, 0.);
         allegro_command.num_torques = 0;
@@ -37,13 +51,24 @@ class ConstantPositionInput{
                                        -0.1,   1.6,  1.7, 1.,
                                           0,   1.6,  1.7, 1., 
                                         0.1,   1.6,  1.7, 1.};
-
         // while (true){
-        for(int i=0; i<1000;i++){
+        for(int i=0; i<3e3;i++){
           while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
 
           allegro_command.utime = allegro_status_.utime;
           lcm_.publish(kLcmCommandChannel, &allegro_command);
+          sleep(0.1);
+        }
+        passive_flag = true;
+        for(int i=0; i<8000;i++){
+          while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
+
+          // for (int j = 0; j< kAllegroNumJoints; j++)
+          //   allegro_command.joint_position[j] = 
+          //       allegro_status_.joint_position_measured[j];
+
+          // allegro_command.utime = allegro_status_.utime;
+          // lcm_.publish(kLcmCommandChannel, &allegro_command);
           sleep(0.1);
         }
     }
@@ -54,16 +79,20 @@ class ConstantPositionInput{
     allegro_status_ = *status;    
     Eigen::VectorXd velocity_state(kAllegroNumJoints);
     Eigen::VectorXi stopped_motion(kAllegroNumJoints);
+    Eigen::VectorXd desired_pose(kAllegroNumJoints);
     Eigen::VectorXd dis_to_desired_pose(kAllegroNumJoints);
     Eigen::VectorXi reach_desired_pose(kAllegroNumJoints);
     Eigen::VectorXd exert_torque(kAllegroNumJoints);
     Eigen::VectorXd torque_by_velocity(kAllegroNumJoints);
+    Eigen::VectorXd measured_pos(kAllegroNumJoints);
     double velocity_thresh = 0.5;
     double position_thresh = 0.05; 
 
     for(int i = 0; i < kAllegroNumJoints; i++){
       velocity_state(i) = allegro_status_.joint_velocity_estimated[i];
-      if (abs(velocity_state(i)) < velocity_thresh) stopped_motion(i) = 1;
+      if (velocity_state(i) * allegro_status_.joint_torque_commanded [i] < 0)
+          stopped_motion(i) = 1;
+      else if (abs(velocity_state(i)) < velocity_thresh) stopped_motion(i) = 1;
       else stopped_motion(i) = 0;
 
       dis_to_desired_pose(i) = allegro_status_.joint_position_commanded[i] - 
@@ -74,19 +103,30 @@ class ConstantPositionInput{
 
       exert_torque(i) = allegro_status_.joint_torque_commanded[i];
       torque_by_velocity(i) = exert_torque(i) / (abs(velocity_state(i))+0.001);
+
+      measured_pos(i) = allegro_status_.joint_position_measured[i];
+      desired_pose(i) = allegro_status_.joint_position_commanded[i];
     }
 
     // Test display
-    std::cout<<
-    torque_by_velocity.segment(0, 4).transpose()<<"    "<<
-    torque_by_velocity.segment(4, 4).transpose()<<"    "<<
-    torque_by_velocity.segment(8, 4).transpose()<<"    "<<
-    torque_by_velocity.segment(12, 4).transpose()<<"    "<<
-    std::endl;  
+    print_hand_state(measured_pos);
+    print_hand_state(desired_pose);
+    std::cout<<std::endl;
+
+    if (passive_flag){
+      for (int j = 0; j< kAllegroNumJoints; j++)
+          allegro_command.joint_position[j] = 
+              allegro_status_.joint_position_measured[j];
+
+        allegro_command.utime = allegro_status_.utime;
+        lcm_.publish(kLcmCommandChannel, &allegro_command);
+    }
   }
 
   ::lcm::LCM lcm_;
   lcmt_allegro_status allegro_status_;
+  lcmt_allegro_command allegro_command;
+  bool passive_flag = false;
 };
 
 
