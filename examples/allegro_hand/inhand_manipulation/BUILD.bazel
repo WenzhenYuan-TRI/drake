@@ -41,6 +41,22 @@ drake_cc_binary(
     ],
 )
 
+
+drake_cc_binary(
+    name = "run_close_hand",
+    srcs = ["run_close_hand.cc"],
+    deps = [
+        "//examples/allegro_hand:allegro_common",
+        "//examples/allegro_hand:allegro_hand_state",
+        "//examples/allegro_hand:allegro_lcm",
+        "//lcm",
+        "//lcmtypes:allegro",
+        "@gflags",
+        "@lcmtypes_bot2_core",
+        "@lcmtypes_robotlocomotion",
+    ],
+)
+
 drake_cc_binary(
     name = "lcm_simulation_test",
     srcs = ["lcm_simulation_test.cc"],
