@@ -182,7 +182,7 @@ void DoMain() {
   Eigen::Isometry3d X_WM;
   Eigen::Vector3d rpy( M_PI /2, 0, 0);
   X_WM.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
-  X_WM.translation() = p_WHand + Eigen::Vector3d(0.055, 0.05, 0.08);
+  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.062, 0.095);
   X_WM.makeAffine();
   plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
   std::cout<<mug.index();

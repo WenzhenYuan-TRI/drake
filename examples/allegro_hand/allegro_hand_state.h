@@ -33,7 +33,9 @@ public:
   Eigen::Vector4d FingerOpenPose(int finger_index);
 
   bool IsFingerStuck(int finger_index) {return is_finger_stuck(finger_index);}
-  bool IsAllFingersStuck() {return is_finger_stuck.all();}
+  bool IsAllFingersStuck() {
+      return is_finger_stuck.all();}
+  bool IsAnyHighFingersStuck(){return is_finger_stuck.segment(1,3).any();}
 
 private:
   
@@ -46,7 +48,7 @@ private:
   Eigen::Array<bool, Eigen::Dynamic, 1> is_finger_stuck;
 
 //-------------local variables
-  double velocity_thresh = 0.5;
+  double velocity_thresh = 0.07;
 
 
 };
