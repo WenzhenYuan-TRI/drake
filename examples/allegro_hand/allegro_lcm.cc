@@ -62,8 +62,8 @@ void AllegroCommandReceiver::DoCalcDiscreteVariableUpdates(
       new_positions(i) = command.joint_position[i];
     }
 
-    state_value.segment(num_joints_, num_joints_) =
-        (new_positions - state_value.head(num_joints_)) / kLcmStatusPeriod;
+    state_value.segment(num_joints_, num_joints_).setZero();
+        // = (new_positions - state_value.head(num_joints_)) / kLcmStatusPeriod;
     state_value.head(num_joints_) = new_positions;
   }
 

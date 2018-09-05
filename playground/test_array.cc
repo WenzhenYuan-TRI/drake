@@ -6,7 +6,8 @@
 
 #define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
 
-int main()
+
+void test1()
 {
   double array_var[4];
 
@@ -52,6 +53,24 @@ int main()
   Eigen::VectorXd::Map(&array_var4[0], 4)=Vec;
   std::cout<<array_var4[0]<<" "<<array_var4[1]<<" "<<array_var4[2]<<" "<<array_var4[3]<<std::endl;
 
+  // ---------------
+  std::cout<<"block experiment:\n"<<Eigen::Vector2d::Ones()*2<<std::endl;;
+  std::cout<<Eigen::Vector3d(1,0,-1)<<std::endl;
 
+}
+
+void test2()
+{
+  Eigen::ArrayXd a(4),b(4);
+  a<<1,2,3,4;
+  b<<-1,5,-1,5;
+  std::cout<<a.transpose()<<b.transpose()<<std::endl;
+  std::cout<<(a*b).transpose()<<std::endl;
+}
+
+
+int main()
+{
+  test2();
 
 }
