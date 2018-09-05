@@ -77,7 +77,7 @@ class ConstantPositionInput{
           target_joint_pose.segment(9, 3)+=(0.15*Eigen::Vector3d(1,1, 0.5));
           target_joint_pose.segment(0,4) = hand_state.FingerClosePose(0);
           // index finger
-          target_joint_pose.segment(5, 3)+=(0.4*Eigen::Vector3d(1,0, 0.5));
+          target_joint_pose.segment(5, 3)+=(0.6*Eigen::Vector3d(1,0.3, 0.5));
           MovetoPositionUntilStuck(target_joint_pose);
 
 
@@ -86,7 +86,7 @@ class ConstantPositionInput{
           target_joint_pose.segment(9, 3)+=(0.15*Eigen::Vector3d(1,1, 0.5));
           target_joint_pose.segment(0,4) = hand_state.FingerClosePose(0);
           // ring finger
-          target_joint_pose.segment(13, 3)+=(0.4*Eigen::Vector3d(1, 0, 0.5));
+          target_joint_pose.segment(13, 3)+=(0.6*Eigen::Vector3d(1, 0.3, 0.5));
           MovetoPositionUntilStuck(target_joint_pose);
         }
         sleep(5);

@@ -32,13 +32,6 @@ void AllegroHandState::Update(const lcmt_allegro_status* allegro_state_msg){
   if (reverse.segment(9,  3).any()) is_finger_stuck(2) = true;
   if (reverse.segment(13, 3).any()) is_finger_stuck(3) = true;
 
-
-  // test
-  // if (is_finger_stuck.all())
-  //   std::cout<<joint_velocity.transpose()<<std::endl;
-  // std::cout<<is_finger_stuck.transpose()<<std::endl;
-  // std::cout<<reverse.segment(5,3).transpose()<<" "<<is_finger_stuck(1)<<std::endl;
-  // std::cout<<is_joint_stuck.segment(0,  4).transpose()<<std::endl;
 }
 
 Eigen::Vector4d AllegroHandState::FingerClosePose(int finger_index){
@@ -61,8 +54,6 @@ Eigen::Vector4d AllegroHandState::FingerOpenPose(int finger_index){
     pose << 0.263,   1.1,  0,0. ;
   return pose;
 }
-
-
 
 }  // namespace allegro_hand
 }  // namespace examples
