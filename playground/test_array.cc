@@ -51,7 +51,8 @@ void test1()
   // -------------------
   std::vector<double> array_var4(4,13.0);
   Eigen::VectorXd::Map(&array_var4[0], 4)=Vec;
-  std::cout<<array_var4[0]<<" "<<array_var4[1]<<" "<<array_var4[2]<<" "<<array_var4[3]<<std::endl;
+  std::cout<<array_var4[0]<<" "<<array_var4[1]<<" "<<array_var4[2]<<" "<<array_var4[3]
+          <<std::endl;
 
   // ---------------
   std::cout<<"block experiment:\n"<<Eigen::Vector2d::Ones()*2<<std::endl;;
@@ -68,9 +69,16 @@ void test2()
   std::cout<<(a*b).transpose()<<std::endl;
 }
 
+void test3()
+{
+  Eigen::Vector3d a{33,22,11};
+  std::cout<<a<<std::endl;
+
+}
+
 
 int main()
 {
-  test2();
+  test3();
 
 }

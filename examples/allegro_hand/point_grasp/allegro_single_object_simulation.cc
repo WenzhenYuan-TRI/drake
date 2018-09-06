@@ -69,8 +69,10 @@ void DoMain() {
                   + FLAGS_test_hand + ".sdf");
   const std::string ObjectModelPath = FindResourceOrThrow("drake/examples/"
                   "allegro_hand/point_grasp/models/simple_mug.sdf");
-  multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
-  multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
+  auto hand_index =  multibody::parsing::AddModelFromSdfFile(
+                      HandSdfPath, &plant, &scene_graph);
+  auto object_index = multibody::parsing::AddModelFromSdfFile(
+                      ObjectModelPath, &plant, &scene_graph);
 
   // Weld the hand to the world frame
   // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
