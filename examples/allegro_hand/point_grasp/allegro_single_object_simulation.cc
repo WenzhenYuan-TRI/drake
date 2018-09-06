@@ -33,6 +33,8 @@
 #include "drake/systems/lcm/lcm_subscriber_system.h"
 #include "drake/systems/primitives/matrix_gain.h"
 
+#include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
+
 namespace drake {
 namespace examples {
 namespace allegro_hand {
@@ -66,7 +68,7 @@ void DoMain() {
                   "/allegro_hand_description/sdf/allegro_hand_description_"
                   + FLAGS_test_hand + ".sdf");
   const std::string ObjectModelPath = FindResourceOrThrow("drake/examples/"
-                  "allegro_hand/inhand_manipulation/models/objects/simple_mug.sdf");
+                  "allegro_hand/point_grasp/models/simple_mug.sdf");
   multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
   multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
 
@@ -176,13 +178,14 @@ void DoMain() {
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
 
   // Initialize the mug pose to be right in the middle between the fingers.
+  MugSetting mug_setting;
   std::vector<Eigen::Isometry3d> X_WB_all;
   plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
   const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
   Eigen::Isometry3d X_WM;
-  Eigen::Vector3d rpy( M_PI /2, 0, 0);
-  X_WM.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
-  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.062, 0.095);
+  X_WM.linear() = math::RotationMatrix<double>
+                  (math::RollPitchYaw<double>(mug_setting.IniRotAngles)).matrix();
+  X_WM.translation() = p_WHand + mug_setting.IniTransPosition;
   X_WM.makeAffine();
   plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 

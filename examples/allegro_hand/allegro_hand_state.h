@@ -23,7 +23,6 @@ public:
     FingerNum = AllegroNumJoints / 4;
     is_joint_stuck.resize(AllegroNumJoints);
     is_finger_stuck.resize(FingerNum);
-    std::cout<<is_joint_stuck<<std::endl;
   }
 
   // update upon receiving the new message about hand state: update whether
