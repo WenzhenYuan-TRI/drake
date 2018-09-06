@@ -442,7 +442,7 @@ class SpatialInertia {
   template <typename T1 = T>
   typename std::enable_if_t<scalar_predicate<T1>::is_bool> CheckInvariants()
       const {
-    if (!IsPhysicallyValid()) {
+    if (!IsPhysicallyValid().value()) {
       throw std::runtime_error(
           "The resulting spatial inertia is not physically valid. "
               "See SpatialInertia::IsPhysicallyValid()");

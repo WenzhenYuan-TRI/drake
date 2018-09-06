@@ -74,6 +74,9 @@ void DoMain() {
   auto object_index = multibody::parsing::AddModelFromSdfFile(
                       ObjectModelPath, &plant, &scene_graph);
 
+  std::cout<< hand_index <<object_index; 
+  // (void*) object_index;
+
   // Weld the hand to the world frame
   // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
   // the 3D space
