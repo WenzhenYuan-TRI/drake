@@ -15,10 +15,10 @@
         </inertia>
       </inertial>
       <collision name='main_body_collision'>
-        <pose frame=''>0 0 0.05 0 -0 0</pose>
+        <pose frame=''>0 0 0.07 0 -0 0</pose>
         <geometry>
           <cylinder>
-            <length>0.13</length>
+            <length>0.14</length>
             <radius>0.04</radius>
           </cylinder>
         </geometry>
@@ -33,7 +33,7 @@
         </surface>
       </collision>
       <collision name='mug_handle_collision'>
-        <pose frame=''>0.055 0 0.05 0 -0 0</pose>
+        <pose frame=''>0.055 0 0.07 0 -0 0</pose>
           <geometry>
             <box>
               <size>0.03 0.02 0.08</size>
@@ -42,16 +42,16 @@
       </collision>
 
       <visual name='main_body_visual'>
-        <pose frame=''>0 0 0.05 0 -0 0</pose>
+        <pose frame=''>0 0 0.07 0 -0 0</pose>
         <geometry>
           <cylinder>
-            <length>0.13</length>
+            <length>0.14</length>
             <radius>0.04</radius>
           </cylinder>
         </geometry>
       </visual>
       <visual name='mug_handle_visual'>
-        <pose frame=''>0.055 0 0.05 0 -0 0</pose>
+        <pose frame=''>0.055 0 0.07 0 -0 0</pose>
         <geometry>
           <box>
             <size>0.03 0.02 0.08</size>

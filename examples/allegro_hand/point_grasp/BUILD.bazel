@@ -16,8 +16,11 @@ install_data()
 drake_cc_library(
     name = "point_grasp_common",
     hdrs = ["point_grasp_common.h"],
+    srcs = ["point_grasp_common.cc"],
     deps = [
-
+        "//systems/framework:leaf_system",
+        "//geometry",
+        "//multibody/multibody_tree/multibody_plant",
     ],
 )
 

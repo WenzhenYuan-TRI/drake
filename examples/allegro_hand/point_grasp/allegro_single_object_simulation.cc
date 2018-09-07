@@ -74,8 +74,7 @@ void DoMain() {
   auto object_index = multibody::parsing::AddModelFromSdfFile(
                       ObjectModelPath, &plant, &scene_graph);
 
-  std::cout<< hand_index <<object_index; 
-  // (void*) object_index;
+  std::cout<< hand_index <<"  " << object_index<<std::endl; 
 
   // Weld the hand to the world frame
   // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
@@ -84,10 +83,16 @@ void DoMain() {
   plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {},
       joint_hand_root, {}, Isometry3<double>::Identity());
 
+    // position
+  const multibody::Body<double>& mug = plant.GetBodyByName("main_body");
+  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
+  MugSetting mug_setting(&plant, &scene_graph, mug);
+
   // Add gravity, if needed
   if (FLAGS_add_gravity)
     plant.AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
+
   plant.Finalize(&scene_graph);
 
   // Visualization
@@ -165,6 +170,16 @@ void DoMain() {
   builder.Connect(status_sender->get_output_port(0),
                     hand_status_pub->get_input_port());
 
+
+  // send the message of object status
+  // auto obj_status_sender = builder.AddSystem<ObjectStateHandler>();                                                      
+  // status_sender->set_name("obj_status_sender");
+  // std::cout<<object_index<<std::endl<<std::endl;
+  // builder.Connect(plant.get_continuous_state_output_port(object_index),
+  //                obj_status_sender->get_state_input_port());
+
+
+
   // Now the model is complete.
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
   geometry::DispatchLoadMessage(scene_graph, &lcm);
@@ -177,13 +192,10 @@ void DoMain() {
 
 
   // object position
-  const multibody::Body<double>& mug = plant.GetBodyByName("main_body");
-  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
   systems::Context<double>& plant_context =
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
 
   // Initialize the mug pose to be right in the middle between the fingers.
-  MugSetting mug_setting;
   std::vector<Eigen::Isometry3d> X_WB_all;
   plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
   const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
