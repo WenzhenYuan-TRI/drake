@@ -206,6 +206,8 @@ void DoMain() {
   X_WM.makeAffine();
   plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
+  mug_setting.CalcPointPosition(/*plant_context*/);
+
   lcm.StartReceiveThread();
 
   // Set up simulator.
@@ -219,6 +221,8 @@ void DoMain() {
                                            &simulator.get_mutable_context()),
       VectorX<double>::Zero(plant.num_actuators()));
 
+  sleep(1);
+  mug_setting.TestReachingPosition(Px);
 
   simulator.StepTo(FLAGS_simulation_time);
 }  // main

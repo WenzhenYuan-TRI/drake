@@ -21,6 +21,9 @@ drake_cc_library(
         "//systems/framework:leaf_system",
         "//geometry",
         "//multibody/multibody_tree/multibody_plant",
+        "//multibody/inverse_kinematics:inverse_kinematics",
+        "//lcm",
+        "//lcmtypes:allegro",
     ],
 )
 

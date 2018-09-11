@@ -8,8 +8,11 @@
 #include "drake/common/eigen_types.h"
 #include "drake/geometry/geometry_visualization.h"
 #include "drake/geometry/scene_graph.h"
-#include "drake/multibody/multibody_tree/multibody_plant/multibody_plant.h"
+#include "drake/multibody/inverse_kinematics/inverse_kinematics.h"
 #include "drake/systems/framework/leaf_system.h"
+
+
+
 
 namespace drake {
 namespace examples {
@@ -30,6 +33,10 @@ public:
   Eigen::Vector3d IniTransPosition;
 
   Eigen::MatrixXd TargetGraspPos; 
+
+// template <typename T> 
+  void CalcPointPosition(/*const systems::Context<T>& context*/);
+  void TestReachingPosition(MatrixX<double> Px);
 
 private:
   void AddGrippingPoint();
@@ -61,9 +68,6 @@ class ObjectStateHandler : public systems::LeafSystem<double> {
     const override;
 
 };
-
-
-
 
 
 
