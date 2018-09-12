@@ -15,10 +15,14 @@ namespace allegro_hand {
 
 using drake::multibody::multibody_plant::MultibodyPlant;
 
-class ObjectFrameConverter : systems::LeafSystem<double> {
+const double kObjectStatePublishPeriod = 0.05;
+
+// template <typename T>
+class ObjectFrameTracker : public systems::LeafSystem<double> {
 public:
-  ObjectFrameConverter(const MultibodyPlant<double>& plant, 
-                       const std::vector<multibody::FrameIndex>& frames);
+  ObjectFrameTracker(const MultibodyPlant<double>& plant, 
+                     const std::vector<multibody::FrameIndex>& frames,
+                     const std::string& obj_body_name);
 
   const systems::InputPort<double>& get_state_input_port() const {
     return this->get_input_port(state_input_port_);
@@ -31,20 +35,44 @@ public:
 
 
 private:
-  // void ini_mug_target_frames();
 
   void CalcFramePoses(const systems::Context<double>& context, 
                       std::vector<Isometry3<double>>* frame_poses) const;
 
+  void DoPublish(const systems::Context<double>& context,
+                 const std::vector<const systems::PublishEvent<double>*>& events)
+                 const override;
+
 
   const MultibodyPlant<double>* plant_{nullptr};
-  // const std::string obj_body_name_;
+  const std::string obj_body_name_;
   std::unique_ptr<systems::Context<double>> plant_context_;
   const std::vector<multibody::FrameIndex> frames_;
   int frame_poses_port_{-1};
   int state_input_port_;
 
 };
+
+
+class ObjectStateHandler : public systems::LeafSystem<double> {
+public:
+  ObjectStateHandler();
+
+  const systems::InputPort<double>& get_frame_input_port() const {
+    return this->get_input_port(object_poses_input_port_);
+  }
+
+private:
+  void DoPublish(const systems::Context<double>& context,
+                 const std::vector<const systems::PublishEvent<double>*>& events)
+                 const override;
+
+  const std::vector<Isometry3<double>> object_frames_;
+  int object_poses_input_port_;
+
+};
+
+
 
 
 void PublishFramesToLcm(const std::string& channel_name,

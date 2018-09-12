@@ -74,8 +74,7 @@ void DoMain() {
                       HandSdfPath, &plant, &scene_graph);
   auto object_index = multibody::parsing::AddModelFromSdfFile(
                       ObjectModelPath, &plant, &scene_graph);
-
-  std::cout<< hand_index <<"  " << object_index<<std::endl; 
+  (void)hand_index; (void)object_index;
 
   // Weld the hand to the world frame
   // TODO(WenzhenYuan-TRI): adding the DOF to enable the hand to move free in
@@ -171,17 +170,27 @@ void DoMain() {
   status_sender->set_name("status_sender");
 
   builder.Connect(hand_command_sub->get_output_port(),
-                    hand_command_receiver->get_input_port(0));
+                  hand_command_receiver->get_input_port(0));
   builder.Connect(hand_command_receiver->get_commanded_state_output_port(),
-                    hand_controller->get_input_port_desired_state());
+                  hand_controller->get_input_port_desired_state());
   builder.Connect(hand_status_converter->get_output_port(),
-                    status_sender->get_state_input_port());
+                  status_sender->get_state_input_port());
   builder.Connect(hand_command_receiver->get_output_port(0),
-                    status_sender->get_command_input_port());
+                  status_sender->get_command_input_port());
   builder.Connect(hand_output_torque_converter->get_output_port(),
-                    status_sender->get_commanded_torque_input_port());
+                  status_sender->get_commanded_torque_input_port());
   builder.Connect(status_sender->get_output_port(0),
-                    hand_status_pub->get_input_port());
+                  hand_status_pub->get_input_port());
+
+
+    // System for tracking the frames on the cup
+  auto obj_tracking_system = builder.AddSystem<ObjectFrameTracker>(
+        plant, obj_track_frame, "main_body");
+  builder.Connect(plant.get_continuous_state_output_port(),
+                  obj_tracking_system->get_state_input_port());
+  auto object_state_handler = builder.AddSystem<ObjectStateHandler>();
+  builder.Connect(obj_tracking_system->get_frame_output_port(),
+                  object_state_handler->get_input_port(0));
 
 
   // Now the model is complete.
@@ -191,8 +200,6 @@ void DoMain() {
   std::unique_ptr<systems::Context<double>> diagram_context =
       diagram->CreateDefaultContext();
   diagram->SetDefaultContext(diagram_context.get());
-
-  // object position
   systems::Context<double>& plant_context =
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
 
@@ -219,12 +226,8 @@ void DoMain() {
           plant.world_frame(), plant.tree().get_frame(obj_track_frame[i]));
     display_frame.push_back(X_WF);
   }
-  std::cout<<"size of frames "<<display_frame.size()
-  <<"  "<<frame_names.size()<<std::endl;
-  PublishFramesToLcm("TargetPos", display_frame, frame_names, &lcm);
+  // PublishFramesToLcm("TargetPos", display_frame, frame_names, &lcm);
   // --------------------------
-
-
 
 
   lcm.StartReceiveThread();

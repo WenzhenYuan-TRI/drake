@@ -1,10 +1,5 @@
 #include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
 
-#include "lcm/lcm-cpp.hpp"
-#include "drake/lcmt_allegro_command.hpp"
-#include "drake/math/rotation_matrix.h"
-#include "drake/lcm/drake_lcm.h"
-
 #include <iostream>
 
 namespace drake {
@@ -19,6 +14,66 @@ using systems::DiscreteValues;
 using systems::State;
 using systems::SystemOutput;
 using systems::DiscreteUpdateEvent;
+
+AllegroFingerIKMoving::AllegroFingerIKMoving(MultibodyPlant<double>& plant,
+     MatrixX<double> Px) : plant_(&plant){
+  Px_half = Px.block(0, 0, kAllegroNumJoints, plant_->num_positions());
+
+  allegro_command.num_joints = kAllegroNumJoints;
+  allegro_command.joint_position.resize(kAllegroNumJoints, 0.);
+  allegro_command.num_torques = 0;
+  allegro_command.joint_torque.resize(kAllegroNumJoints, 0.);
+}
+
+void AllegroFingerIKMoving::CommandFingerMotion(
+      std::vector<Isometry3<double>>* finger_target, 
+      std::vector<multibody::FrameIndex>* reference_frame,
+      std::vector<int>* finger_id, double target_tor = 5e-3){
+
+  DRAKE_DEMAND(finger_id->size() == finger_target->size());
+  DRAKE_DEMAND(finger_id->size() == reference_frame->size());
+
+  multibody::InverseKinematics ik_(*plant_);
+
+  // add position constraints for each fingers
+  Eigen::Vector3d p_W_tor = Eigen::Vector3d::Constant(target_tor);
+  Eigen::Vector3d p_W;
+  int cur_finger_id;
+  
+  for(unsigned int i=0; i < finger_id->size(); i++){
+    cur_finger_id = finger_id->at(i);
+    std::cout<<cur_finger_id;
+    DRAKE_DEMAND(cur_finger_id >= 0 && cur_finger_id < 4);
+    const Frame<double>& reference_target_frame = 
+          plant_->tree().get_frame(reference_frame->at(i));
+    Eigen::Vector3d p_TipFinger(0, 0, 0.0267 + 0.012);
+    p_W = finger_target->at(i).translation();
+    const Frame<double>* fingertip_frame{nullptr};
+    if(cur_finger_id == 0){ // if it's the thumb
+        p_TipFinger(2) = 0.0423 + 0.012;
+        fingertip_frame =&( plant_->GetFrameByName("link_15"));
+    }
+    else{
+        fingertip_frame = &(plant_->GetFrameByName("link_"+std::to_string(
+                                                  cur_finger_id * 4 - 1)));
+    }
+    ik_.AddPositionConstraint(*fingertip_frame, p_TipFinger, 
+                            reference_target_frame, p_W-p_W_tor, p_W+p_W_tor);
+  }
+
+  const auto result = ik_.get_mutable_prog()->Solve();
+  std::cout<<"Did IK find result? "<<result<<"  "<< solvers::SolutionResult::kSolutionFound<<std::endl;
+  const auto q_sol = ik_.prog().GetSolution(ik_.q());
+  Eigen::VectorXd q_sol_only_hand = Px_half * q_sol;
+
+  // Send info to hand
+  Eigen::VectorXd::Map(&allegro_command.joint_position[0], kAllegroNumJoints)
+                             = q_sol_only_hand;
+  // allegro_command.joint_position[4] = 0.1;
+  lcm_.publish("ALLEGRO_COMMAND", &allegro_command);
+}
+
+
 
 MugSetting::MugSetting(MultibodyPlant<double>* plant, SceneGraph<double>* scene_graph, 
               const Body<double>& mug_body) : 
@@ -49,9 +104,6 @@ std::vector<Isometry3<double>> MugSetting::GenerateTargetFrame(){
     X_BF.translation() = TargetGraspPos.row(i);
     X_BF.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(
                     Eigen::Vector3d(TargetRotAngle(i), 0, 0))).matrix();
-    // X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
-                                         // Eigen::Vector3d::UnitX()));
-    std::cout<<X_BF.matrix()<<std::endl<<std::endl;
     frame_poses.push_back(X_BF);
   }
   return frame_poses;
@@ -60,7 +112,7 @@ std::vector<Isometry3<double>> MugSetting::GenerateTargetFrame(){
 
 
 
-
+// This function is just for test
 void MugSetting::AddGrippingPoint(){
   const double central_point = MugHeight / 2;
   constexpr double index_finger_interval = 0.045;
@@ -82,15 +134,10 @@ void MugSetting::AddGrippingPoint(){
     plant_->RegisterVisualGeometry(mug_body_, X_FS, Sphere(display_radius),
                                 "point_2", red, scene_graph_);
   }
-
-  X_FS.translation()= Eigen::Vector3d(0.06, 0.058, 0.17);
-  X_FS.translation()= Eigen::Vector3d(0.095, 0.017,  0.135);
-  plant_->RegisterVisualGeometry(plant_->world_body(), X_FS, Sphere(display_radius),
-                                "point_0", red, scene_graph_);
-
-  // end display test
 }
 
+
+// Just for test
 //template <typename T> 
 void MugSetting::CalcPointPosition(/*const systems::Context<T>& context*/){
   // calculate frame
@@ -123,12 +170,6 @@ void MugSetting::TestReachingPosition(MatrixX<double> Px){
   const Frame<double>& world_frame = plant_->world_frame();
   const Frame<double>& finger_frame = plant_->GetFrameByName("link_3");
   std::cout<<world_frame.body().name()<<finger_frame.body().name()<<std::endl;
-  // ik_.get_mutable_prog()->AddConstraint(
-  //   solvers::internal::ParseQuadraticConstraint(
-  //     ik_.q().segment<16>(7).cast<symbolic::Expression>().squaredNorm(), 1, 1));
-  // ik_.get_mutable_prog()->AddConstraint(
-  //   solvers::internal::ParseQuadraticConstraint(
-  //     ik_.q().segment<4>().cast<symbolic::Expression>().squaredNorm(), 1, 1));
 
   // Position constraint
   Eigen::Vector3d p_W(0.095, 0.057,  0.135);
@@ -167,6 +208,7 @@ void MugSetting::TestReachingPosition(MatrixX<double> Px){
 
 }
 
+/*
 
 ObjectStateHandler::ObjectStateHandler(){
   // Object position - 7 numbers; velocity - 6 numbers
@@ -183,10 +225,8 @@ void ObjectStateHandler::DoPublish(const Context<double>& context,
   const auto& ObjectPos = this->EvalVectorInput(context, 0)->get_value();
 
   std::cout<<ObjectPos.transpose()<<std::endl;
-
-
-
 }
+*/
 
 }  // namespace allegro_hand
 }  // namespace examples
