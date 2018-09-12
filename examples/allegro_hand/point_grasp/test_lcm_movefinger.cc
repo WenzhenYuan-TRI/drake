@@ -46,9 +46,6 @@ class ConstantPositionInput{
 
         // ------------ MOVE ONE Fenger
         // Target Position: 0.095 0.122  0.12
-        Eigen::Vector3d IndexTarget(0.095 0.122  0.12);
-
-
 
 
 

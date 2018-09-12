@@ -20,12 +20,27 @@ drake_cc_library(
     deps = [
         "//systems/framework:leaf_system",
         "//geometry",
+        "//math",
         "//multibody/multibody_tree/multibody_plant",
         "//multibody/inverse_kinematics:inverse_kinematics",
         "//lcm",
         "//lcmtypes:allegro",
     ],
 )
+
+drake_cc_library(
+    name = "object_state_handler",
+    hdrs = ["object_state_handler.h"],
+    srcs = ["object_state_handler.cc"],
+    deps = [
+        "//systems/framework:leaf_system",
+        "//geometry",
+        "//math",
+        "//multibody/multibody_tree/multibody_plant",
+        "//lcm",
+    ],
+)
+
 
 
 drake_cc_binary(

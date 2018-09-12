@@ -2,6 +2,7 @@
 
 #include "lcm/lcm-cpp.hpp"
 #include "drake/lcmt_allegro_command.hpp"
+#include "drake/math/rotation_matrix.h"
 
 #include <iostream>
 
@@ -52,6 +53,7 @@ void MugSetting::AddGrippingPoint(){
   }
 
   X_FS.translation()= Eigen::Vector3d(0.06, 0.058, 0.17);
+  X_FS.translation()= Eigen::Vector3d(0.095, 0.017,  0.135);
   plant_->RegisterVisualGeometry(plant_->world_body(), X_FS, Sphere(display_radius),
                                 "point_0", red, scene_graph_);
 
@@ -68,7 +70,8 @@ void MugSetting::CalcPointPosition(/*const systems::Context<T>& context*/){
   Eigen::Isometry3d X_OW;
   Eigen::Isometry3d X_PO;
   X_OW.translation() = IniTransPosition;
-  X_OW.linear() = Eigen::Matrix3d::Identity();
+  X_OW.linear() =  math::RotationMatrix<double>
+                  (math::RollPitchYaw<double>(IniRotAngles)).matrix();
   X_PO.linear() = Eigen::Matrix3d::Identity();
   X_OW.makeAffine();
   X_PO.makeAffine();
@@ -79,7 +82,7 @@ void MugSetting::CalcPointPosition(/*const systems::Context<T>& context*/){
       pose = TargetGraspPos.row(i).transpose();
       X_PO.translation() = pose;
       std::cout<< "Target Point Position: " <<X_PO.translation().transpose()<<std::endl;
-      std::cout<<(X_PO * X_OW).translation().transpose()<<std::endl;
+      std::cout<<(X_OW * X_PO).translation().transpose()<<std::endl;
   }
 }
 
@@ -97,10 +100,10 @@ void MugSetting::TestReachingPosition(MatrixX<double> Px){
   //     ik_.q().segment<4>().cast<symbolic::Expression>().squaredNorm(), 1, 1));
 
   // Position constraint
-  Eigen::Vector3d p_W(0.095, 0.122,  0.12);
+  Eigen::Vector3d p_W(0.095, 0.057,  0.135);
   Eigen::Vector3d p_W_tor = Eigen::Vector3d::Ones() * 2e-3;
   Eigen::Vector3d p_TipFinger(0, 0, 0.0267+0.012);
-  p_W = Eigen::Vector3d(0.06, 0.058, 0.17);
+  // p_W = Eigen::Vector3d(0.06, 0.058, 0.17);
   // p_TipFinger.setZero();
 
   Eigen::MatrixXd Px_half = Px.block(0,0,16,23);

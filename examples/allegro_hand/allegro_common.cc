@@ -91,7 +91,7 @@ void GetControlPortMapping(
   Py.setZero();
   for (multibody::JointActuatorIndex actuator_index(0);
        actuator_index < plant.num_actuated_dofs(); ++actuator_index) {
-    const auto& actuator = plant.model().get_joint_actuator(actuator_index);
+    const auto& actuator = plant.tree().get_joint_actuator(actuator_index);
     const auto& joint = actuator.joint();
     if (joint_name_mapping.find(joint.name()) != joint_name_mapping.end())
       Py(actuator_index, joint_name_mapping[joint.name()]) = 1.0;

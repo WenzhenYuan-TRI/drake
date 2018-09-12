@@ -96,7 +96,7 @@ void DoMain() {
   plant.Finalize(&scene_graph);
 
   // Visualization
-  geometry::ConnectVisualization(scene_graph, &builder, &lcm);
+  geometry::ConnectDrakeVisualizer(&builder, scene_graph);
   DRAKE_DEMAND(!!plant.get_source_id());
   builder.Connect(plant.get_geometry_poses_output_port(),
       scene_graph.get_source_pose_port(plant.get_source_id().value()));
@@ -197,14 +197,14 @@ void DoMain() {
 
   // Initialize the mug pose to be right in the middle between the fingers.
   std::vector<Eigen::Isometry3d> X_WB_all;
-  plant.model().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
+  plant.tree().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
   const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
   Eigen::Isometry3d X_WM;
   X_WM.linear() = math::RotationMatrix<double>
                   (math::RollPitchYaw<double>(mug_setting.IniRotAngles)).matrix();
   X_WM.translation() = p_WHand + mug_setting.IniTransPosition;
   X_WM.makeAffine();
-  plant.model().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
+  plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
   mug_setting.CalcPointPosition(/*plant_context*/);
 
