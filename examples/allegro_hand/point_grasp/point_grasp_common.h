@@ -34,6 +34,8 @@ public:
 
   Eigen::MatrixXd TargetGraspPos; 
 
+  std::vector<Isometry3<double>> GenerateTargetFrame();
+
 // template <typename T> 
   void CalcPointPosition(/*const systems::Context<T>& context*/);
   void TestReachingPosition(MatrixX<double> Px);
@@ -68,8 +70,6 @@ class ObjectStateHandler : public systems::LeafSystem<double> {
     const override;
 
 };
-
-
 
 }  // namespace allegro_hand
 }  // namespace examples

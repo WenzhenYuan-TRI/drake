@@ -15,10 +15,10 @@ namespace allegro_hand {
 
 using drake::multibody::multibody_plant::MultibodyPlant;
 
-class ObjectFrameConverter : public systems::LeafSystem<double> {
+class ObjectFrameConverter : systems::LeafSystem<double> {
 public:
   ObjectFrameConverter(const MultibodyPlant<double>& plant, 
-                       const std::string ObjectBodyName);
+                       const std::vector<multibody::FrameIndex>& frames);
 
   const systems::InputPort<double>& get_state_input_port() const {
     return this->get_input_port(state_input_port_);
@@ -28,21 +28,29 @@ public:
     return this->get_output_port(frame_poses_port_);
   }
 
+
+
 private:
-  void ini_mug_target_frames();
+  // void ini_mug_target_frames();
 
   void CalcFramePoses(const systems::Context<double>& context, 
                       std::vector<Isometry3<double>>* frame_poses) const;
 
 
-  MultibodyPlant<double>* plant_{nullptr};
-  const std::string obj_body_name_;
+  const MultibodyPlant<double>* plant_{nullptr};
+  // const std::string obj_body_name_;
   std::unique_ptr<systems::Context<double>> plant_context_;
   const std::vector<multibody::FrameIndex> frames_;
   int frame_poses_port_{-1};
   int state_input_port_;
 
 };
+
+
+void PublishFramesToLcm(const std::string& channel_name,
+                        const std::vector<Eigen::Isometry3d>& poses,
+                        const std::vector<std::string>& names,
+                        drake::lcm::DrakeLcmInterface* dlcm);
 
 
 

@@ -65,6 +65,7 @@ drake_cc_binary(
     ],
     deps = [
         ":point_grasp_common",
+        ":object_state_handler",
         "//common:find_resource",
         "//common:text_logging_gflags",
         "//examples/allegro_hand:allegro_common",

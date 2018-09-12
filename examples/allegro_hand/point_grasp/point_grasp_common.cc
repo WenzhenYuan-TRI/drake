@@ -3,6 +3,7 @@
 #include "lcm/lcm-cpp.hpp"
 #include "drake/lcmt_allegro_command.hpp"
 #include "drake/math/rotation_matrix.h"
+#include "drake/lcm/drake_lcm.h"
 
 #include <iostream>
 
@@ -26,8 +27,38 @@ MugSetting::MugSetting(MultibodyPlant<double>* plant, SceneGraph<double>* scene_
     IniRotAngles<<M_PI/2, 0 , 0;
     IniTransPosition<< 0.095,0.082, 0.095;
     AddGrippingPoint();
-
 }
+
+
+std::vector<Isometry3<double>> MugSetting::GenerateTargetFrame(){
+  std::vector<Isometry3<double>> frame_poses; 
+  const double central_point = MugHeight / 2;
+  constexpr double index_finger_interval = 0.045;
+  constexpr double thumb_partial = 0.005;
+  
+  TargetGraspPos.resize(4,3);
+  TargetGraspPos.row(2) << 0, MugRadius, central_point;
+  TargetGraspPos.row(1) << 0, MugRadius, central_point - index_finger_interval;
+  TargetGraspPos.row(3) << 0, MugRadius, central_point + index_finger_interval;
+  TargetGraspPos.row(0) << 0, -MugRadius, central_point - thumb_partial;
+  Eigen::Vector4d TargetRotAngle(M_PI/2, -M_PI/2, -M_PI/2, -M_PI/2);
+
+  Eigen::Isometry3d X_BF; /* pose of cup upper frame F in mug body frame B */
+  X_BF.makeAffine();
+  for (int i=0; i < 4; i++){
+    X_BF.translation() = TargetGraspPos.row(i);
+    X_BF.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(
+                    Eigen::Vector3d(TargetRotAngle(i), 0, 0))).matrix();
+    // X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
+                                         // Eigen::Vector3d::UnitX()));
+    std::cout<<X_BF.matrix()<<std::endl<<std::endl;
+    frame_poses.push_back(X_BF);
+  }
+  return frame_poses;
+}
+
+
+
 
 
 void MugSetting::AddGrippingPoint(){

@@ -34,6 +34,7 @@
 #include "drake/systems/primitives/matrix_gain.h"
 
 #include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
+#include "drake/examples/allegro_hand/point_grasp/object_state_handler.h"
 
 namespace drake {
 namespace examples {
@@ -88,11 +89,23 @@ void DoMain() {
   const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
   MugSetting mug_setting(&plant, &scene_graph, mug);
 
+  // add tracking frame on the mug, for the fingers
+  std::vector<Isometry3<double>> obj_track_frame_transform =
+      mug_setting.GenerateTargetFrame();
+  std::vector<multibody::FrameIndex> obj_track_frame;
+  int frame_count = 0;
+  for(auto X_BF : obj_track_frame_transform){
+    const auto& mug_target_frame = plant.AddFrame(//<multibody::FixedOffsetFrame>(
+      std::make_unique<multibody::FixedOffsetFrame<double>>(
+        "ObjTargetFrame" + std::to_string(frame_count), mug, X_BF));
+    obj_track_frame.push_back(mug_target_frame.index());
+    frame_count++;
+  }
+
   // Add gravity, if needed
   if (FLAGS_add_gravity)
     plant.AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
-
   plant.Finalize(&scene_graph);
 
   // Visualization
@@ -171,15 +184,6 @@ void DoMain() {
                     hand_status_pub->get_input_port());
 
 
-  // send the message of object status
-  // auto obj_status_sender = builder.AddSystem<ObjectStateHandler>();                                                      
-  // status_sender->set_name("obj_status_sender");
-  // std::cout<<object_index<<std::endl<<std::endl;
-  // builder.Connect(plant.get_continuous_state_output_port(object_index),
-  //                obj_status_sender->get_state_input_port());
-
-
-
   // Now the model is complete.
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
   geometry::DispatchLoadMessage(scene_graph, &lcm);
@@ -187,9 +191,6 @@ void DoMain() {
   std::unique_ptr<systems::Context<double>> diagram_context =
       diagram->CreateDefaultContext();
   diagram->SetDefaultContext(diagram_context.get());
-  // systems::Context<double>& plant_context =
-  //     diagram->GetMutableSubsystemContext(plant, diagram_context.get());
-
 
   // object position
   systems::Context<double>& plant_context =
@@ -207,6 +208,24 @@ void DoMain() {
   plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
   mug_setting.CalcPointPosition(/*plant_context*/);
+
+
+  // ---------------- test display ----------
+  std::vector<std::string> frame_names;
+  std::vector<Isometry3<double>> display_frame;
+  for (int i=0; i<4;i++){
+    frame_names.push_back("ObjTargetFrame" + std::to_string(i));
+    const auto X_WF = plant.tree().CalcRelativeTransform(plant_context, 
+          plant.world_frame(), plant.tree().get_frame(obj_track_frame[i]));
+    display_frame.push_back(X_WF);
+  }
+  std::cout<<"size of frames "<<display_frame.size()
+  <<"  "<<frame_names.size()<<std::endl;
+  PublishFramesToLcm("TargetPos", display_frame, frame_names, &lcm);
+  // --------------------------
+
+
+
 
   lcm.StartReceiveThread();
 

@@ -47,9 +47,9 @@ void PublishFramesToLcm(const std::string& channel_name,
 
 
 
-ObjectFrameConverter::ObjectFrameConverter(MultibodyPlant<double>& plant, 
-    const std::string ObjectBodyName) : plant_(&plant), 
-                                        obj_body_name_(ObjectBodyName) {
+ObjectFrameConverter::ObjectFrameConverter(const MultibodyPlant<double>& plant, 
+     const std::vector<multibody::FrameIndex>& frames) : 
+          plant_(&plant), frames_(frames){
     // ObjectFrameConverter input port with BasicVector for the sate x of the plant..
 
   state_input_port_ = this->DeclareInputPort(systems::kVectorValued, 
@@ -57,71 +57,72 @@ ObjectFrameConverter::ObjectFrameConverter(MultibodyPlant<double>& plant,
   frame_poses_port_ = this->DeclareAbstractOutputPort(std::vector<Eigen::Isometry3d>(),
       &ObjectFrameConverter::CalcFramePoses).get_index();
 
-  ini_mug_target_frames();
+  // frames_=frames;
+
   plant_context_ = plant_->CreateDefaultContext();
 }
 
 
-void ObjectFrameConverter::ini_mug_target_frames(){
-  // add frame to the plant
+// void ObjectFrameConverter::ini_mug_target_frames(){
+//   // add frame to the plant
 
 
-/*
-  // display for test
-  const geometry::VisualMaterial red(Vector4<double>(1.0, 0.0, 0.0, 1.0));
-  constexpr double display_radius = 0.005;
-  Eigen::Isometry3d X_FS;
-  for (int i=0; i < 4; i++){
-    X_FS.translation() = TargetTransformation.row(i);
-    plant_->RegisterVisualGeometry(mug_body_, X_FS, Sphere(display_radius),
-                                "point_2", red, scene_graph_);
-  }
-*/
+// /*
+//   // display for test
+//   const geometry::VisualMaterial red(Vector4<double>(1.0, 0.0, 0.0, 1.0));
+//   constexpr double display_radius = 0.005;
+//   Eigen::Isometry3d X_FS;
+//   for (int i=0; i < 4; i++){
+//     X_FS.translation() = TargetTransformation.row(i);
+//     plant_->RegisterVisualGeometry(mug_body_, X_FS, Sphere(display_radius),
+//                                 "point_2", red, scene_graph_);
+//   }
+// */
 
-  // --------------------
-  const multibody::Body<double>& mug_body = plant_->GetBodyByName(obj_body_name_);
+//   // --------------------
+//   const multibody::Body<double>& mug_body = plant_->GetBodyByName(obj_body_name_);
 
-  const double MugHeight = 0.14;
-  const double MugRadius = 0.04;
-  const double central_point = MugHeight / 2;
-  const double up_interval = 0.045;
-  const double thumb_partial = 0.005;
+//   const double MugHeight = 0.14;
+//   const double MugRadius = 0.04;
+//   const double central_point = MugHeight / 2;
+//   const double up_interval = 0.045;
+//   const double thumb_partial = 0.005;
 
-  Eigen::MatrixXd TargetTransformation(4,3);
-  TargetTransformation.row(2) << 0, MugRadius, central_point;
-  TargetTransformation.row(1) << 0, MugRadius, central_point - up_interval;
-  TargetTransformation.row(3) << 0, MugRadius, central_point + up_interval;
-  TargetTransformation.row(0) << 0, -MugRadius, central_point - thumb_partial;
-  Eigen::Vector4d TargetRotAngle(-M_PI/2, M_PI/2, M_PI/2, M_PI/2);
+//   Eigen::MatrixXd TargetTransformation(4,3);
+//   TargetTransformation.row(2) << 0, MugRadius, central_point;
+//   TargetTransformation.row(1) << 0, MugRadius, central_point - up_interval;
+//   TargetTransformation.row(3) << 0, MugRadius, central_point + up_interval;
+//   TargetTransformation.row(0) << 0, -MugRadius, central_point - thumb_partial;
+//   Eigen::Vector4d TargetRotAngle(-M_PI/2, M_PI/2, M_PI/2, M_PI/2);
 
-  Eigen::Isometry3d X_BF; /* pose of cup upper frame F in mug body frame B */
-  for (int i=0; i < 4; i++){
-    X_BF.translation() = TargetTransformation.row(i);
-    X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
-                                         Eigen::Vector3d::UnitX()));
-    const auto& mug_target_frame = plant_->AddFrame(//<multibody::FixedOffsetFrame>(
-      std::make_unique<multibody::FixedOffsetFrame<double>>("ObjTargetFrame" + std::to_string(i),
-      mug_body, X_BF));
-    frames_.push_back(mug_target_frame);
-  }
+//   Eigen::Isometry3d X_BF; /* pose of cup upper frame F in mug body frame B */
+//   for (int i=0; i < 4; i++){
+//     X_BF.translation() = TargetTransformation.row(i);
+//     X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
+//                                          Eigen::Vector3d::UnitX()));
+//     const auto& mug_target_frame = plant_->AddFrame(//<multibody::FixedOffsetFrame>(
+//       std::make_unique<multibody::FixedOffsetFrame<double>>("ObjTargetFrame" + std::to_string(i),
+//       mug_body, X_BF));
+//     frames_.push_back(mug_target_frame);
+//   }
 
-  // -----test: add visualization for test using visualizing frames through lcm
+//   // -----test: add visualization for test using visualizing frames through lcm
 
-  std::vector<Eigen::Isometry3d> pose_frames;// = {X_BF};
-  std::vector<std::string> frame_names;// = {"name"};
-  lcm::DrakeLcm lcm;
-  for (int i=0; i < 4; i++){
-    X_BF.translation() = TargetTransformation.row(i);
-    X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
-                                         Eigen::Vector3d::UnitX()));
-    pose_frames.push_back(X_BF);
-    frame_names.push_back("ObjTargetFrame" + std::to_string(i));
-  }
-  PublishFramesToLcm("TargetPos", pose_frames, frame_names, &lcm);
+//   std::vector<Eigen::Isometry3d> pose_frames;// = {X_BF};
+//   std::vector<std::string> frame_names;// = {"name"};
+//   lcm::DrakeLcm lcm;
+//   for (int i=0; i < 4; i++){
+//     X_BF.translation() = TargetTransformation.row(i);
+//     X_BF.rotate(Eigen::AngleAxis<double>(TargetRotAngle(i), 
+//                                          Eigen::Vector3d::UnitX()));
+//     pose_frames.push_back(X_BF);
+//     frame_names.push_back("ObjTargetFrame" + std::to_string(i));
+//   }
+//   PublishFramesToLcm("TargetPos", pose_frames, frame_names, &lcm);
 
-  // TODO: link to main program
+//   // TODO: link to main program
 
-}
+// }
 
 
 void ObjectFrameConverter::CalcFramePoses(const systems::Context<double>& context,
