@@ -18,6 +18,7 @@ using systems::DiscreteUpdateEvent;
 AllegroFingerIKMoving::AllegroFingerIKMoving(MultibodyPlant<double>& plant,
      MatrixX<double> Px) : plant_(&plant){
   Px_half = Px.block(0, 0, kAllegroNumJoints, plant_->num_positions());
+  saved_joint_position.setConstant(plant_->num_positions(), 0.5);
 
   allegro_command.num_joints = kAllegroNumJoints;
   allegro_command.joint_position.resize(kAllegroNumJoints, 0.);
@@ -51,49 +52,42 @@ void AllegroFingerIKMoving::CommandFingerMotion(
   for(unsigned int i=0; i < finger_id.size(); i++){
     cur_finger_id = finger_id[i];
     DRAKE_DEMAND(cur_finger_id >= 0 && cur_finger_id < 4);
-    Eigen::Vector3d p_TipFinger(0, 0, 0.0267 + 0.012);    
+    Eigen::Vector3d p_TipFinger(0, 0, 0.0267/* + 0.012*/);    
     const Frame<double>* fingertip_frame{nullptr};
     if(cur_finger_id == 0){ // if it's the thumb
         p_TipFinger(2) = 0.0423/*+ 0.012*/;
         fingertip_frame =&( plant_->GetFrameByName("link_15"));
 
-        frame_transfer[i].translation()-=Eigen::Vector3d(0,0,0.012);
+        finger_target[i].translation()+=Eigen::Vector3d(0,0,0.012);
     }
     else{
         fingertip_frame = &(plant_->GetFrameByName("link_"+std::to_string(
                                                   cur_finger_id * 4 - 1)));
+
+        finger_target[i].translation()+=Eigen::Vector3d(0,0,0.012);
     }
 
     Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
     p_W = finger_target_transfer.translation();
-    if(! finger_target_transfer.isApprox(saved_target[cur_finger_id])){
+    // if(saved_target[cur_finger_id].matrix().isApprox(Eigen::MatrixXd::Identity(4,4))){
+    if(! saved_target[cur_finger_id].isApprox(finger_target_transfer)){
         target_updated_flag = true;
         saved_target[cur_finger_id] = finger_target_transfer;
     }
-    
-    std::cout<<p_W.transpose()<<std::endl;
 
     ik_.AddPositionConstraint(*fingertip_frame, p_TipFinger, 
                             WorldFrame, p_W-p_W_tor, p_W+p_W_tor);
   }
   if(!target_updated_flag) return;
 
-  // ------------- For test -----------
-  Eigen::VectorXd initial_guess(16);
-  initial_guess.setZero();
-  initial_guess.segment<3>(5) << 0.5, 0.5, 0.5;
-  initial_guess.segment<3>(9) << 0.5, 0.5, 0.5;
-  initial_guess.segment<3>(13) << 0.5, 0.5, 0.5;
-  initial_guess.segment<4>(0) << 1,0, 1, 0.5;
-
-  ik_.get_mutable_prog()->SetInitialGuess(ik_.q(), Px_half.transpose() * initial_guess);
-  //-------------------------
+  ik_.get_mutable_prog()->SetInitialGuess(ik_.q(), saved_joint_position);
 
   const auto result = ik_.get_mutable_prog()->Solve();
   std::cout<<"Did IK find result? "<<result<<"  "<< solvers::SolutionResult::kSolutionFound<<std::endl;
   const auto q_sol = ik_.prog().GetSolution(ik_.q());
   Eigen::VectorXd q_sol_only_hand = Px_half * q_sol;
-  std::cout<<q_sol_only_hand.transpose()<<std::endl;
+  // std::cout<<q_sol_only_hand.transpose()<<std::endl;
+  saved_joint_position = q_sol;
 
   // Send info to hand
   // just for test---
@@ -112,7 +106,7 @@ MugSetting::MugSetting(MultibodyPlant<double>* plant, SceneGraph<double>* scene_
     plant_(plant), scene_graph_(scene_graph), mug_body_(mug_body)
 {
     IniRotAngles<<M_PI/2, 0 , 0;
-    IniTransPosition<< 0.095,0.082, 0.095;
+    IniTransPosition<< 0.095,0.082, 0.098;
     AddGrippingPoint();
 }
 

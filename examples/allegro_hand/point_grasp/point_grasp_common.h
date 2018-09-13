@@ -47,6 +47,7 @@ private:
 
   // this is used for test -- reduce repeated position
   std::vector<Isometry3<double>> saved_target;
+  Eigen::VectorXd saved_joint_position;
 };
 
 // This is a temporary class that defines the inital position of the mug
