@@ -183,12 +183,16 @@ void DoMain() {
                   hand_status_pub->get_input_port());
 
 
+  // finger IK handler
+  AllegroFingerIKMoving FingerMotionCommander(plant, Px);
+
     // System for tracking the frames on the cup
   auto obj_tracking_system = builder.AddSystem<ObjectFrameTracker>(
         plant, obj_track_frame, "main_body");
   builder.Connect(plant.get_continuous_state_output_port(),
                   obj_tracking_system->get_state_input_port());
-  auto object_state_handler = builder.AddSystem<ObjectStateHandler>();
+  auto object_state_handler = builder.AddSystem<ObjectStateHandler>(
+                              &FingerMotionCommander);
   builder.Connect(obj_tracking_system->get_frame_output_port(),
                   object_state_handler->get_input_port(0));
 
@@ -244,7 +248,7 @@ void DoMain() {
       VectorX<double>::Zero(plant.num_actuators()));
 
   sleep(1);
-  mug_setting.TestReachingPosition(Px);
+  // mug_setting.TestReachingPosition(Px);
 
   simulator.StepTo(FLAGS_simulation_time);
 }  // main

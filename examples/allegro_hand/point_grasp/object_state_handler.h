@@ -8,6 +8,7 @@
 #include "drake/common/eigen_types.h"
 #include "drake/multibody/multibody_tree/multibody_plant/multibody_plant.h"
 #include "drake/systems/framework/leaf_system.h"
+#include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
 
 namespace drake {
 namespace examples {
@@ -56,7 +57,7 @@ private:
 
 class ObjectStateHandler : public systems::LeafSystem<double> {
 public:
-  ObjectStateHandler();
+  ObjectStateHandler(AllegroFingerIKMoving* FingerMotionCommander);
 
   const systems::InputPort<double>& get_frame_input_port() const {
     return this->get_input_port(object_poses_input_port_);
@@ -69,6 +70,7 @@ private:
 
   const std::vector<Isometry3<double>> object_frames_;
   int object_poses_input_port_;
+  AllegroFingerIKMoving* FingerMotionCommander_;
 
 };
 

@@ -90,7 +90,7 @@ void ObjectFrameTracker::DoPublish(const systems::Context<double>& context,
 
   // ------------ test for display frames ---------------
   std::vector<std::string> frame_names;
-  for (int i=0; i<5;i++){
+  for (int i=0; i<4;i++){
     frame_names.push_back("ObjTargetFrame" + std::to_string(i));
   }
   lcm::DrakeLcm lcm;
@@ -99,16 +99,32 @@ void ObjectFrameTracker::DoPublish(const systems::Context<double>& context,
 
 
 
-ObjectStateHandler::ObjectStateHandler(){
+ObjectStateHandler::ObjectStateHandler(AllegroFingerIKMoving* FingerMotionCommander) :
+        FingerMotionCommander_(FingerMotionCommander){
   object_poses_input_port_ = this->DeclareAbstractInputPort().get_index();
-  this->DeclarePeriodicPublish(1);
+  this->DeclarePeriodicPublish(100);
 }
 
 // Experiment with moving the fingers
 void ObjectStateHandler::DoPublish(const systems::Context<double>& context,
                const std::vector<const systems::PublishEvent<double>*>& ) const{
 
-  std::vector<int> *finger_id = new std::vector<int>(4);
+  const systems::AbstractValue* state_vector = this->EvalAbstractInput(
+                                            context, object_poses_input_port_);
+  const auto frame_poses = state_vector->GetValue<std::vector<Isometry3<double>>>();
+
+  std::vector<int> finger_id{0,1,2,3};
+  
+  std::vector<Isometry3<double>> finger_target_pose;
+  Isometry3<double> P_F;
+  P_F.matrix().setIdentity();
+  for(int i=0; i<4; i++){
+    P_F.translation() = Eigen::Vector3d(0,0,0);
+    finger_target_pose.push_back(P_F);
+  }
+
+  FingerMotionCommander_->CommandFingerMotion(
+          finger_target_pose, frame_poses, finger_id, 2e-3);
 
 
 }

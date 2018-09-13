@@ -77,8 +77,29 @@ void test3()
 }
 
 
+void test4()
+{
+  std::vector<int>* v = new std::vector<int>(4);
+  v->clear();
+  v->push_back(1);
+  v->push_back(2);
+  v->push_back(3);
+  v->push_back(4);
+
+  std::cout<<(*v)[1]<<std::endl;
+}
+
+void test5()
+{
+  drake::Isometry3<double> a, b;
+  a.matrix().setIdentity();
+  b.matrix().setIdentity();
+  std::cout<<a.isApprox(b)<<std::endl;
+
+}
+
 int main()
 {
-  test3();
+  test5();
 
 }

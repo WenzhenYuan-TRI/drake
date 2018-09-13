@@ -19,6 +19,7 @@ drake_cc_library(
     srcs = ["point_grasp_common.cc"],
     deps = [
         "//systems/framework:leaf_system",
+        "//examples/allegro_hand:allegro_common",
         "//geometry",
         "//math",
         "//multibody/multibody_tree/multibody_plant",
@@ -33,6 +34,7 @@ drake_cc_library(
     hdrs = ["object_state_handler.h"],
     srcs = ["object_state_handler.cc"],
     deps = [
+        ":point_grasp_common",
         "//systems/framework:leaf_system",
         "//geometry",
         "//math",

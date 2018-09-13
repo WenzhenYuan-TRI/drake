@@ -15,6 +15,7 @@
 #include "drake/lcmt_allegro_command.hpp"
 #include "drake/math/rotation_matrix.h"
 #include "drake/lcm/drake_lcm.h"
+#include "drake/examples/allegro_hand/allegro_common.h"
 
 
 
@@ -27,16 +28,15 @@ using drake::geometry::SceneGraph;
 using drake::multibody::multibody_plant::MultibodyPlant;
 using drake::multibody::Body;
 
-const int kAllegroNumJoints = 16;
 
 class AllegroFingerIKMoving{
 public:
   AllegroFingerIKMoving(MultibodyPlant<double>& plant, MatrixX<double> Px);
 
   void CommandFingerMotion(
-      std::vector<Isometry3<double>>* finger_target, 
-      std::vector<multibody::FrameIndex>* reference_frame,
-      std::vector<int>* finger_id, double target_tor);
+      std::vector<Isometry3<double>> finger_target, 
+      std::vector<Isometry3<double>> frame_transfer,
+      std::vector<int> finger_id, double target_tor);
 
 private:
 
@@ -44,6 +44,9 @@ private:
   MatrixX<double> Px_half;
   ::lcm::LCM lcm_;
   lcmt_allegro_command allegro_command;
+
+  // this is used for test -- reduce repeated position
+  std::vector<Isometry3<double>> saved_target;
 };
 
 // This is a temporary class that defines the inital position of the mug
