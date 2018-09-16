@@ -1,4 +1,7 @@
 #include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
+#include "drake/multibody/multibody_tree/joints/weld_joint.h"
+#include "drake/common/find_resource.h"
+#include "drake/multibody/multibody_tree/parsing/multibody_plant_sdf_parser.h"
 
 #include <iostream>
 
@@ -6,7 +9,8 @@ namespace drake {
 namespace examples {
 namespace allegro_hand {
 
-using drake::geometry::Sphere;
+using multibody::multibody_plant::MultibodyPlant;
+using geometry::Sphere;
 using multibody::Frame;
 using systems::BasicVector;
 using systems::Context;
@@ -19,6 +23,7 @@ AllegroFingerIKMoving::AllegroFingerIKMoving(MultibodyPlant<double>& plant,
      MatrixX<double> Px) : plant_(&plant){
   Px_half = Px.block(0, 0, kAllegroNumJoints, plant_->num_positions());
   saved_joint_position.setConstant(plant_->num_positions(), 0.5);
+  saved_joint_command.setConstant(16, 0.5);
 
   allegro_command.num_joints = kAllegroNumJoints;
   allegro_command.joint_position.resize(kAllegroNumJoints, 0.);
@@ -31,7 +36,102 @@ AllegroFingerIKMoving::AllegroFingerIKMoving(MultibodyPlant<double>& plant,
   saved_target.push_back(ini_transform);
   saved_target.push_back(ini_transform);
   saved_target.push_back(ini_transform);
+
+  IniFingerPlant();
 }
+
+void AllegroFingerIKMoving::CommandFingerMotion_indipendentfingers(
+      std::vector<Isometry3<double>> finger_target, 
+      std::vector<Isometry3<double>> frame_transfer,
+      std::vector<int> finger_id, double target_tor = 5e-3){
+
+  DRAKE_DEMAND(finger_id.size() == finger_target.size());
+  DRAKE_DEMAND(finger_id.size() == frame_transfer.size());
+
+  Eigen::Vector3d p_W_tor = Eigen::Vector3d::Constant(target_tor);
+  Eigen::Vector3d p_W;
+  int cur_finger_id;
+  bool target_updated_flag = false;
+
+  (void)p_W_tor;
+
+
+  //update the saved command position
+  Eigen::VectorXd q_command = saved_joint_command;
+
+  for(unsigned int i=0; i < finger_id.size(); i++){
+    cur_finger_id = finger_id[i];
+    DRAKE_DEMAND(cur_finger_id >= 0 && cur_finger_id < 4);
+
+    // calculate the destination of the fingertip. If it's the same, skip the loop
+    Eigen::Vector3d p_TipFinger(0, 0, 0.0267);    
+    finger_target[i].translation()+=Eigen::Vector3d(0,0,0.012);
+    const Frame<double>* fingertip_frame{nullptr};
+    if(cur_finger_id == 0) {// if it's the thumb
+        p_TipFinger(2) = 0.0423/*+ 0.012*/; 
+      finger_target[i].translation()+=Eigen::Vector3d(0,0,0.007);
+
+    }
+
+    Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
+    p_W = finger_target_transfer.translation();
+    if(! saved_target[cur_finger_id].isApprox(finger_target_transfer))
+        saved_target[cur_finger_id] = finger_target_transfer;
+    else
+        continue;
+
+    const Frame<double>& WorldFrame= finger_plant[cur_finger_id]->world_frame();
+    multibody::InverseKinematics ik_(*(finger_plant[cur_finger_id]));
+    //get target fingertip frame
+    if(cur_finger_id == 0)
+        fingertip_frame =&(finger_plant[cur_finger_id]->GetFrameByName("link_15"));
+    else
+        fingertip_frame = &(finger_plant[cur_finger_id]->GetFrameByName("link_"+std::to_string(
+                                                  cur_finger_id * 4 - 1)));
+
+    ik_.AddPositionConstraint(*fingertip_frame, p_TipFinger, 
+                            WorldFrame, p_W-p_W_tor, p_W+p_W_tor);
+    ik_.get_mutable_prog()->SetInitialGuess(ik_.q(), saved_joint_command.segment<4>(cur_finger_id * 4));
+
+    const auto result = ik_.get_mutable_prog()->Solve();
+    std::cout<<"Did IK find result? "<<result<<"  "<< solvers::SolutionResult::kSolutionFound<<std::endl;
+    const auto q_sol = ik_.prog().GetSolution(ik_.q());
+    saved_joint_command.segment<4>(cur_finger_id * 4) = q_sol;
+    target_updated_flag = true;
+
+  }
+
+  if (target_updated_flag) {
+     Eigen::VectorXd::Map(&allegro_command.joint_position[0], kAllegroNumJoints)
+                             = saved_joint_command;
+    lcm_.publish("ALLEGRO_COMMAND", &allegro_command);
+  }
+}
+
+
+void AllegroFingerIKMoving::IniFingerPlant() {
+  for (int i = 0; i < 4; i++) {
+    finger_plant.push_back(std::make_unique<MultibodyPlant<double>>());
+    const std::string FingerPath = FindResourceOrThrow("drake/manipulation/models"
+                  "/allegro_hand_description/sdf/allegro_right_finger_" + 
+                  std::to_string(i) + ".sdf");
+    multibody::parsing::AddModelFromSdfFile(FingerPath, finger_plant[i].get());
+    const auto& joint_hand_root = finger_plant[i]->GetBodyByName("hand_root");
+    finger_plant[i]->AddJoint<multibody::WeldJoint>( "weld_hand", finger_plant[i]->world_body(),
+       {}, joint_hand_root, {}, Isometry3<double>::Identity());
+    finger_plant[i]->Finalize();
+
+  }
+
+}
+
+
+
+
+
+
+
+
 
 void AllegroFingerIKMoving::CommandFingerMotion(
       std::vector<Isometry3<double>> finger_target, 

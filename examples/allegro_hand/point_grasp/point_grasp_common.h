@@ -38,7 +38,14 @@ public:
       std::vector<Isometry3<double>> frame_transfer,
       std::vector<int> finger_id, double target_tor);
 
+  void CommandFingerMotion_indipendentfingers(
+      std::vector<Isometry3<double>> finger_target, 
+      std::vector<Isometry3<double>> frame_transfer,
+      std::vector<int> finger_id, double target_tor);
+
 private:
+
+  void IniFingerPlant();
 
   MultibodyPlant<double>* plant_;
   MatrixX<double> Px_half;
@@ -48,6 +55,10 @@ private:
   // this is used for test -- reduce repeated position
   std::vector<Isometry3<double>> saved_target;
   Eigen::VectorXd saved_joint_position;
+  Eigen::VectorXd saved_joint_command;
+
+  std::vector<std::unique_ptr<MultibodyPlant<double>>> finger_plant;
+
 };
 
 // This is a temporary class that defines the inital position of the mug
@@ -76,7 +87,6 @@ private:
   MultibodyPlant<double>* plant_;
   SceneGraph<double>* scene_graph_;
   const Body<double>& mug_body_;
-
 };
 
 

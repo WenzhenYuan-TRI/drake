@@ -24,6 +24,7 @@ drake_cc_library(
         "//math",
         "//multibody/multibody_tree/multibody_plant",
         "//multibody/inverse_kinematics:inverse_kinematics",
+        "//multibody/multibody_tree/parsing:multibody_plant_sdf_parser",
         "//lcm",
         "//lcmtypes:allegro",
     ],

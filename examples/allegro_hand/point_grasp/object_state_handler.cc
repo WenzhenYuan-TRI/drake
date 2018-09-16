@@ -123,7 +123,7 @@ void ObjectStateHandler::DoPublish(const systems::Context<double>& context,
     finger_target_pose.push_back(P_F);
   }
 
-  FingerMotionCommander_->CommandFingerMotion(
+  FingerMotionCommander_->CommandFingerMotion_indipendentfingers(
           finger_target_pose, frame_poses, finger_id, 2e-3);
 
 

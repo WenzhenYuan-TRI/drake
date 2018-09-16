@@ -218,7 +218,14 @@ void DoMain() {
   X_WM.makeAffine();
   plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
-  mug_setting.CalcPointPosition(/*plant_context*/);
+  // ini thumb position
+  const multibody::RevoluteJoint<double>& thumb_root =
+      plant.GetJointByName<multibody::RevoluteJoint>("joint_12");
+  thumb_root.set_angle(&plant_context, 1.4);
+
+
+
+  // mug_setting.CalcPointPosition(/*plant_context*/);
 
 
   // ---------------- test display ----------
@@ -231,10 +238,14 @@ void DoMain() {
     display_frame.push_back(X_WF);
   }
   // PublishFramesToLcm("TargetPos", display_frame, frame_names, &lcm);
+
+  std::cout<< "finished test part\n";
   // --------------------------
 
 
   lcm.StartReceiveThread();
+
+  std::cout<<"start simulator\n";
 
   // Set up simulator.
   systems::Simulator<double> simulator(*diagram, std::move(diagram_context));
@@ -242,12 +253,16 @@ void DoMain() {
   simulator.set_target_realtime_rate(FLAGS_target_realtime_rate);
   simulator.Initialize();
 
+  std::cout<<"simulator inied\n";
+
   hand_command_receiver->set_initial_position(
       &diagram->GetMutableSubsystemContext(*hand_command_receiver,
                                            &simulator.get_mutable_context()),
-      VectorX<double>::Zero(plant.num_actuators()));
+       VectorX<double>::Zero(plant.num_actuators()));
 
-  sleep(1);
+  std::cout<<"command inied\n";
+
+  // sleep(100);
   // mug_setting.TestReachingPosition(Px);
 
   simulator.StepTo(FLAGS_simulation_time);

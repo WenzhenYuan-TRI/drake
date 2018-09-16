@@ -38,9 +38,12 @@ AllegroCommandReceiver::AllegroCommandReceiver(int num_joints)
 void AllegroCommandReceiver::set_initial_position(
     Context<double>* context, const Eigen::Ref<const VectorX<double>> x) const {
   auto state_value = context->get_mutable_discrete_state(0).get_mutable_value();
+
+  std::cout<<state_value.transpose()<<std::endl;
   DRAKE_ASSERT(x.size() == num_joints_);
   state_value.setZero();
   state_value.head(num_joints_) = x;
+  context->get_mutable_discrete_state(0).get_mutable_value().head(num_joints_) = x;
 }
 
 void AllegroCommandReceiver::DoCalcDiscreteVariableUpdates(
