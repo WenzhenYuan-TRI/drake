@@ -161,9 +161,6 @@ void MugSetting::AddGrippingPoint(){
                                 "point_2", red, scene_graph_);
   }
 
-  // X_FS.translation() =Eigen::Vector3d(0.095, 0.057, 0.135);
-  //   plant_->RegisterVisualGeometry(plant_->world_body(), X_FS, Sphere(display_radius*2),
-  //                               "point_2", red, scene_graph_);
 }
 
 
@@ -240,26 +237,6 @@ void MugSetting::TestReachingPosition(MatrixX<double> Px){
    lcm_.publish("ALLEGRO_COMMAND", &allegro_command);
 
 }
-
-/*
-
-ObjectStateHandler::ObjectStateHandler(){
-  // Object position - 7 numbers; velocity - 6 numbers
-  // position numbers: first 4 are quaternions, then 3 are positions
-  this->DeclareInputPort(systems::kVectorValued, 13);
-
-  this->DeclarePeriodicPublish(1);
-}
-
-
-void ObjectStateHandler::DoPublish(const Context<double>& context,
-               const std::vector<const systems::PublishEvent<double>*>&) const {
-
-  const auto& ObjectPos = this->EvalVectorInput(context, 0)->get_value();
-
-  std::cout<<ObjectPos.transpose()<<std::endl;
-}
-*/
 
 }  // namespace allegro_hand
 }  // namespace examples

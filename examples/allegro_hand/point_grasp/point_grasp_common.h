@@ -79,25 +79,6 @@ private:
 
 };
 
-
-/*
-class ObjectStateHandler : public systems::LeafSystem<double> {
- public:
-  DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(ObjectStateHandler)
-  ObjectStateHandler();
-
-  const systems::InputPort<double>& get_state_input_port() const {
-    return this->get_input_port(0);
-  }
-
- private:
-
-  void DoPublish(const systems::Context<double>& context,
-               const std::vector<const systems::PublishEvent<double>*>& events)
-    const override;
-};
-*/
-
 }  // namespace allegro_hand
 }  // namespace examples
 }  // namespace drake

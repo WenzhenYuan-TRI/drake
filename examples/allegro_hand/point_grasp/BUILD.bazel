@@ -59,6 +59,25 @@ drake_cc_binary(
 )
 
 drake_cc_binary(
+    name = "test_lcm_movefinger",
+    srcs = ["test_lcm_movefinger.cc"],
+    data = [
+        "//manipulation/models/allegro_hand_description:models",
+    ],
+    deps = [
+        "//examples/allegro_hand:allegro_common",
+        "//examples/allegro_hand:allegro_hand_state",
+        "//examples/allegro_hand:allegro_lcm",
+        "//multibody/inverse_kinematics:inverse_kinematics",
+        "//manipulation/planner:differential_inverse_kinematics",
+        "//lcm",
+        "//lcmtypes:allegro",
+        "@gflags",
+    ],
+)
+
+
+drake_cc_binary(
     name = "allegro_single_object_simulation",
     srcs = ["allegro_single_object_simulation.cc"],
     data = [
