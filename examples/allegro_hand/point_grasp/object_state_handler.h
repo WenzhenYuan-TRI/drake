@@ -10,6 +10,8 @@
 #include "drake/systems/framework/leaf_system.h"
 #include "drake/examples/allegro_hand/point_grasp/point_grasp_common.h"
 
+#include "robotlocomotion/pose_t.hpp"
+
 namespace drake {
 namespace examples {
 namespace allegro_hand {
@@ -18,7 +20,6 @@ using drake::multibody::multibody_plant::MultibodyPlant;
 
 const double kObjectStatePublishPeriod = 0.05;
 
-// template <typename T>
 class ObjectFrameTracker : public systems::LeafSystem<double> {
 public:
   ObjectFrameTracker(const MultibodyPlant<double>& plant, 
@@ -52,6 +53,8 @@ private:
   int frame_poses_port_{-1};
   int state_input_port_;
 
+  // ::lcm::LCM lcm_;
+  const std::string kObjectPoseLCMChannel = "TARGET_POS_STATUS";
 };
 
 

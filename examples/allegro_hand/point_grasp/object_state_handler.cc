@@ -88,12 +88,29 @@ void ObjectFrameTracker::DoPublish(const systems::Context<double>& context,
       frame_poses.push_back(X_WF);
     }
 
+  // --------- publish through LCM about 
+
+  const auto X_WF = plant_->tree().CalcRelativeTransform(*plant_context_, 
+          plant_->world_frame(), plant_->GetFrameByName("main_body"));
+  Eigen::Quaternion<double> obj_roation_quaternion(X_WF.rotation());
+  robotlocomotion::pose_t msg_obj_pose;
+  msg_obj_pose.position.x = X_WF.translation()(0);
+  msg_obj_pose.position.y = X_WF.translation()(1);
+  msg_obj_pose.position.z = X_WF.translation()(2);
+  msg_obj_pose.orientation.w = obj_roation_quaternion.w();
+  msg_obj_pose.orientation.x = obj_roation_quaternion.x();
+  msg_obj_pose.orientation.y = obj_roation_quaternion.y();
+  msg_obj_pose.orientation.z = obj_roation_quaternion.z();
+
+  lcm::DrakeLcm lcm;
+  lcm.get_lcm_instance()->publish(kObjectPoseLCMChannel, &msg_obj_pose);
+
+
   // ------------ test for display frames ---------------
   std::vector<std::string> frame_names;
   for (int i=0; i<4;i++){
     frame_names.push_back("ObjTargetFrame" + std::to_string(i));
   }
-  lcm::DrakeLcm lcm;
   PublishFramesToLcm("TargetPos", frame_poses, frame_names, &lcm);
 }
 
@@ -123,8 +140,8 @@ void ObjectStateHandler::DoPublish(const systems::Context<double>& context,
     finger_target_pose.push_back(P_F);
   }
 
-  FingerMotionCommander_->CommandFingerMotion(
-          finger_target_pose, frame_poses, finger_id, 2e-3);
+  // FingerMotionCommander_->CommandFingerMotion(
+  //         finger_target_pose, frame_poses, finger_id, 2e-3);
 
 
 }

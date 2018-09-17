@@ -40,6 +40,7 @@ drake_cc_library(
         "//math",
         "//multibody/multibody_tree/multibody_plant",
         "//lcm",
+        "@lcmtypes_robotlocomotion",
     ],
 )
 

@@ -77,12 +77,9 @@ class ConstantPositionInput{
         MovetoPositionUntilStuck(target_joint_pose);
 
         // -------------
-
         while(true) {
             while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
         }
-
-
     }
 
   private:
@@ -145,7 +142,8 @@ class ConstantPositionInput{
     // ik_.get_mutable_prog()->SetInitialGuess(ik_.q(), saved_joint_command);
 
     const auto result = ik_.get_mutable_prog()->Solve();
-    std::cout<<"Did IK find result? "<<result<<"  "<< solvers::SolutionResult::kSolutionFound<<std::endl;
+    std::cout<<"Did IK find result? "<<result<<"  "<<
+         solvers::SolutionResult::kSolutionFound<<std::endl;
     const auto q_sol = ik_.prog().GetSolution(ik_.q());
     Eigen::VectorXd q_sol_only_hand = Px_half * q_sol; /* the joint position in the pre-set order*/
     saved_joint_command = q_sol;  // this saved command is for 
