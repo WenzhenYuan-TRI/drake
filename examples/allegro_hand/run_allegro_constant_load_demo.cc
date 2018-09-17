@@ -1,9 +1,9 @@
 /// @file
 ///
 /// This demo sets up a simple dynamic simulation for the Allegro hand using
-/// the multi-body library. A single, constant torque is applied to all joints
-/// and defined by a command-line parameter. This demo also allows to specify
-/// whether the right or left hand is simulated.
+/// the multi-body library. The joint torques are constant values that can be
+/// set manually, and is the same for all the joints. This demo also allows to
+/// specify whether the right or left hand is simulated.
 
 #include <gflags/gflags.h>
 
