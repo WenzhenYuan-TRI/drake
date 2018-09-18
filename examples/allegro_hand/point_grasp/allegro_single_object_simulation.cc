@@ -196,7 +196,6 @@ void DoMain() {
   builder.Connect(obj_tracking_system->get_frame_output_port(),
                   object_state_handler->get_input_port(0));
 
-
   // Now the model is complete.
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
   geometry::DispatchLoadMessage(scene_graph, &lcm);

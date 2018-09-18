@@ -106,7 +106,7 @@ MugSetting::MugSetting(MultibodyPlant<double>* plant, SceneGraph<double>* scene_
     plant_(plant), scene_graph_(scene_graph), mug_body_(mug_body)
 {
     IniRotAngles<<M_PI/2, 0 , 0;
-    IniTransPosition<< 0.095,0.082, 0.098;
+    IniTransPosition<< 0.095,0.082, 0.100;
     AddGrippingPoint();
 }
 

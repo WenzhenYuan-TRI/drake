@@ -41,25 +41,31 @@ const char* const kLcmObjTargetChannel = "TARGET_POS_STATUS";
 class ConstantPositionInput{
   public:
     ConstantPositionInput(){
+      std::cout<<"program started\n";
+
       lcm_.subscribe(kLcmStatusChannel,
                     &ConstantPositionInput::HandleStatus, this);
       lcm_.subscribe(kLcmObjTargetChannel,
                     &ConstantPositionInput::TargetFrameInput, this);
 
       // load plant of the hand; only for right hand in this case
+      plant_ = std::make_unique<MultibodyPlant<double>>(1e-3); 
       const std::string HandPath = FindResourceOrThrow("drake/manipulation/models"
                   "/allegro_hand_description/sdf/allegro_hand_description_right.sdf");
-      multibody::parsing::AddModelFromSdfFile(HandPath, plant_);
+      std::cout<<"found path of model \n";
+      multibody::parsing::AddModelFromSdfFile(HandPath, plant_.get());
+      std::cout<<"parsing model to plant \n";
       const auto& joint_hand_root = plant_->GetBodyByName("hand_root");
       plant_->AddJoint<multibody::WeldJoint>( "weld_hand", plant_->world_body(),
          {}, joint_hand_root, {}, Isometry3<double>::Identity());
       plant_->Finalize();
       plant_context_ = plant_->CreateDefaultContext();
-      //todo -- ini Px
+      //ini Px
       MatrixX<double> Px, Py;
       GetControlPortMapping(*plant_, Px, Py);
       Px_half = Px.block(0,0,16,16);
 
+      following_target_frame = false;
     }
 
     void Run() {
@@ -75,6 +81,7 @@ class ConstantPositionInput{
         target_joint_pose(1) = 0.3;
         // move to the position of opening the hand
         MovetoPositionUntilStuck(target_joint_pose);
+        following_target_frame = true;
 
         // -------------
         while(true) {
@@ -92,7 +99,8 @@ class ConstantPositionInput{
 
   inline void MovetoPositionUntilStuck(const Eigen::VectorXd target_joint_pose){
       PublishPositionCommand(target_joint_pose);
-      for (int i = 0; i<40; i++){
+      flag_moving = false;
+      for (int i = 0; i<100; i++){
           while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
       }
       while (flag_moving) {
@@ -106,6 +114,8 @@ class ConstantPositionInput{
 
     DRAKE_DEMAND(finger_id.size() == finger_target.size());
     DRAKE_DEMAND(finger_id.size() == frame_transfer.size());
+
+    std::cout<<"Ini IK solution \n";
 
     multibody::InverseKinematics ik_(*plant_);
     const Frame<double>& WorldFrame= plant_->world_frame();
@@ -133,7 +143,7 @@ class ConstantPositionInput{
 
       Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
       p_W = finger_target_transfer.translation();
-      saved_target[cur_finger_id] = finger_target_transfer;
+      saved_target.push_back(finger_target_transfer);
       ik_.AddPositionConstraint(*fingertip_frame, p_TipFinger, 
                             WorldFrame, p_W-p_W_tor, p_W+p_W_tor);
     }
@@ -145,9 +155,10 @@ class ConstantPositionInput{
     std::cout<<"Did IK find result? "<<result<<"  "<<
          solvers::SolutionResult::kSolutionFound<<std::endl;
     const auto q_sol = ik_.prog().GetSolution(ik_.q());
-    Eigen::VectorXd q_sol_only_hand = Px_half * q_sol; /* the joint position in the pre-set order*/
+    // Eigen::VectorXd q_sol_only_hand = Px_half * q_sol; /* the joint position in the pre-set order*/
+    drake::log()->info("q_sol {}", q_sol);
     saved_joint_command = q_sol;  // this saved command is for 
-
+    drake::log()->info("saved_joint_command {}", saved_joint_command);
     SendJointCommand();
   }
 
@@ -162,6 +173,10 @@ class ConstantPositionInput{
     // update context of the plant
     plant_->tree().get_mutable_multibody_state_vector(plant_context_.get()).head(16) = 
         saved_joint_command;
+    // std::cout<<plant_context_->get_mutable_state().get_mutable_continuous_state().size()<<std::endl;
+    // plant_context_->get_mutable_state()
+    //   .get_mutable_continuous_state().get_mutable_generalized_position()
+    //       .SetFromVector(saved_joint_command);
 
     // set parameters
     std::unique_ptr<DifferentialInverseKinematicsParameters> params_ =
@@ -199,10 +214,9 @@ class ConstantPositionInput{
 
       // todo : see whether to update
 
-      Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
+      const Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
       if(! saved_target[cur_finger_id].isApprox(finger_target_transfer)){
         target_updated_flag = true;
-        saved_target[cur_finger_id] = finger_target_transfer;
       }
       else continue;
       saved_target[cur_finger_id] = finger_target_transfer;
@@ -210,11 +224,23 @@ class ConstantPositionInput{
       // ----------- differentical IK -----------
       // desired
 
+      // parameters
+      Vector6<double> V_WE_desired =
+          manipulation::planner::ComputePoseDiffInCommonFrame(
+          saved_target[cur_finger_id] /*X_WE*/, finger_target_transfer);
+      MatrixX<double> J_WE(6, 16);
+      plant_->tree().CalcFrameGeometricJacobianExpressedInWorld(
+          *plant_context_, *fingertip_frame, Vector3<double>::Zero(), &J_WE);
+
       DifferentialInverseKinematicsResult mbt_result = 
-          DoDifferentialInverseKinematics(plant_->tree(), *plant_context_, finger_target_transfer,
-                                         *fingertip_frame, *params_);
-      saved_joint_command += mbt_result.joint_velocities.value() * params_->get_timestep();
+          DoDifferentialInverseKinematics(saved_joint_command, Eigen::VectorXd::Zero(16), 
+                                          V_WE_desired, J_WE, *params_);
+
+            // plant_->tree(), *plant_context_, finger_target_transfer,
+                                         // *fingertip_frame, *params_);
+      saved_joint_command += mbt_result.joint_velocities.value()/* * params_->get_timestep()*/;
       std::cout<<mbt_result.joint_velocities.value().transpose()<<std::endl;
+      saved_target[cur_finger_id] = finger_target_transfer;
     }
 
     if (target_updated_flag) SendJointCommand();
@@ -222,7 +248,7 @@ class ConstantPositionInput{
 
   void SendJointCommand(){
       Eigen::VectorXd::Map(&allegro_command.joint_position[0], kAllegroNumJoints)
-                             = saved_joint_command;
+                             = Px_half * saved_joint_command;
       lcm_.publish(kLcmCommandChannel, &allegro_command);
   }
 
@@ -237,9 +263,10 @@ class ConstantPositionInput{
   // return the 4 frames of the preset positions of the target of the
   // fingertips, based on the frame of the object. Currently the parameters
   // are designed for the mug
-  std::vector<Isometry3<double>>* CalcFingerTargetFrame(Isometry3<double> obj_frame) {
+  void CalcFingerTargetFrame(Isometry3<double> obj_frame, 
+                                      std::vector<Isometry3<double>>* frame_poses) {
 
-    std::vector<Isometry3<double>>* frame_poses; 
+    // std::vector<Isometry3<double>> frame_poses; 
     const double MugHeight = 0.14;
     const double MugRadius = 0.04;
     const double central_point = MugHeight / 2;
@@ -259,17 +286,16 @@ class ConstantPositionInput{
       X_BF.translation() = TargetGraspPos.row(i);
       X_BF.linear() = math::RotationMatrix<double>(math::RollPitchYaw<double>(
                       Eigen::Vector3d(TargetRotAngle(i), 0, 0))).matrix();
-      frame_poses->push_back(X_BF * obj_frame);
+      frame_poses->push_back(obj_frame * X_BF);      
     }
-
-    return frame_poses;
   }
 
   void TargetFrameInput(const ::lcm::ReceiveBuffer*, const std::string&,
                         const robotlocomotion::pose_t* msg_mug_position) {
 
-    // todo -- update the target finger from mug positionposition 
+    if (!following_target_frame) return;
 
+    // update the target finger from mug positionposition 
     Isometry3<double> mug_position;
     mug_position.matrix().setIdentity();
     mug_position.translation() << msg_mug_position->position.x,
@@ -279,24 +305,26 @@ class ConstantPositionInput{
                                           msg_mug_position->orientation.x,
                                           msg_mug_position->orientation.y,
                                           msg_mug_position->orientation.z));
-    std::vector<Isometry3<double>>* track_position = CalcFingerTargetFrame(mug_position);
+    std::vector<Isometry3<double>> track_position;
+    CalcFingerTargetFrame(mug_position, &track_position);
 
+    std::cout<<"received object position----- \n";
 
     std::vector<int> finger_id{0,1,2,3};
   
-    std::vector<Isometry3<double>>* finger_target_pose{nullptr};
+    std::vector<Isometry3<double>> finger_target_pose;
     Isometry3<double> P_F;
     P_F.matrix().setIdentity();
     for(int i=0; i<4; i++){
-      P_F.translation() = Eigen::Vector3d(0,0,0);
-      finger_target_pose->push_back(P_F);
+      P_F.translation() = Eigen::Vector3d(0,0,-0.01);
+      finger_target_pose.push_back(P_F);
     }
-
     if (!IK_inied) {
-      iniIKtarget(*finger_target_pose, *track_position, finger_id, 5e-3);
+      iniIKtarget(finger_target_pose, track_position, finger_id, 5e-3);
+      IK_inied = true;
     } 
     else {
-      updateIKtarget(*finger_target_pose, *track_position, finger_id);
+      updateIKtarget(finger_target_pose, track_position, finger_id);
     }  
   }
 
@@ -306,20 +334,18 @@ class ConstantPositionInput{
   AllegroHandState hand_state;
 
   bool flag_moving = true;
+  bool following_target_frame = false; 
 
   bool IK_inied = false; 
 
   // params for hand plant
-  MultibodyPlant<double>* plant_{nullptr};
+  std::unique_ptr<MultibodyPlant<double>> plant_;
   std::unique_ptr<systems::Context<double>> plant_context_;
   std::vector<Isometry3<double>> saved_target;
   // Eigen::VectorXd saved_joint_position;
   Eigen::VectorXd saved_joint_command;
   MatrixX<double> Px_half;
 };
-
-
-
 
 int do_main() {
   ConstantPositionInput runner;

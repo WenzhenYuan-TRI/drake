@@ -21,6 +21,8 @@ void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
     (*Kd)[i] = 5e-3;
   }
   (*Kp)[0] = 0.08;
+  (*Kp)[12] = 0.08;
+  (*Kp)[8] = 0.08;
   *Ki = Eigen::VectorXd::Zero(kAllegroNumJoints);
 }
 
