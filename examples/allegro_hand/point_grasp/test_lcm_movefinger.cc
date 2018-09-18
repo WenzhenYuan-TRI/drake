@@ -129,10 +129,10 @@ class ConstantPositionInput{
       Eigen::Vector3d p_TipFinger(0, 0, 0.0267/* + 0.012*/);    
       const Frame<double>* fingertip_frame{nullptr};
       if(cur_finger_id == 0){ // if it's the thumb
-          p_TipFinger(2) = 0.0423/*+ 0.012*/;
+          p_TipFinger(2) = 0.0423;
           fingertip_frame =&( plant_->GetFrameByName("link_15"));
 
-          finger_target[i].translation()+=Eigen::Vector3d(0,0,0.012);
+          finger_target[i].translation()+=Eigen::Vector3d(0,0,0.03);
       }
       else{
           fingertip_frame = &(plant_->GetFrameByName("link_"+std::to_string(
@@ -148,17 +148,11 @@ class ConstantPositionInput{
                             WorldFrame, p_W-p_W_tor, p_W+p_W_tor);
     }
 
-    // ini guess
-    // ik_.get_mutable_prog()->SetInitialGuess(ik_.q(), saved_joint_command);
-
     const auto result = ik_.get_mutable_prog()->Solve();
     std::cout<<"Did IK find result? "<<result<<"  "<<
          solvers::SolutionResult::kSolutionFound<<std::endl;
     const auto q_sol = ik_.prog().GetSolution(ik_.q());
-    // Eigen::VectorXd q_sol_only_hand = Px_half * q_sol; /* the joint position in the pre-set order*/
-    drake::log()->info("q_sol {}", q_sol);
     saved_joint_command = q_sol;  // this saved command is for 
-    drake::log()->info("saved_joint_command {}", saved_joint_command);
     SendJointCommand();
   }
 
@@ -173,7 +167,6 @@ class ConstantPositionInput{
     // update context of the plant
     plant_->tree().get_mutable_multibody_state_vector(plant_context_.get()).head(16) = 
         saved_joint_command;
-    // std::cout<<plant_context_->get_mutable_state().get_mutable_continuous_state().size()<<std::endl;
     // plant_context_->get_mutable_state()
     //   .get_mutable_continuous_state().get_mutable_generalized_position()
     //       .SetFromVector(saved_joint_command);
@@ -212,8 +205,7 @@ class ConstantPositionInput{
           finger_target[i].translation()+=Eigen::Vector3d(0,0,0.012);
       }
 
-      // todo : see whether to update
-
+      // see whether to update
       const Isometry3<double> finger_target_transfer = frame_transfer[i] * finger_target[i];
       if(! saved_target[cur_finger_id].isApprox(finger_target_transfer)){
         target_updated_flag = true;
@@ -222,9 +214,6 @@ class ConstantPositionInput{
       saved_target[cur_finger_id] = finger_target_transfer;
 
       // ----------- differentical IK -----------
-      // desired
-
-      // parameters
       Vector6<double> V_WE_desired =
           manipulation::planner::ComputePoseDiffInCommonFrame(
           saved_target[cur_finger_id] /*X_WE*/, finger_target_transfer);
@@ -235,11 +224,8 @@ class ConstantPositionInput{
       DifferentialInverseKinematicsResult mbt_result = 
           DoDifferentialInverseKinematics(saved_joint_command, Eigen::VectorXd::Zero(16), 
                                           V_WE_desired, J_WE, *params_);
-
-            // plant_->tree(), *plant_context_, finger_target_transfer,
-                                         // *fingertip_frame, *params_);
       saved_joint_command += mbt_result.joint_velocities.value()/* * params_->get_timestep()*/;
-      std::cout<<mbt_result.joint_velocities.value().transpose()<<std::endl;
+      // std::cout<<mbt_result.joint_velocities.value().transpose()<<std::endl;
       saved_target[cur_finger_id] = finger_target_transfer;
     }
 
@@ -265,13 +251,11 @@ class ConstantPositionInput{
   // are designed for the mug
   void CalcFingerTargetFrame(Isometry3<double> obj_frame, 
                                       std::vector<Isometry3<double>>* frame_poses) {
-
-    // std::vector<Isometry3<double>> frame_poses; 
     const double MugHeight = 0.14;
     const double MugRadius = 0.04;
     const double central_point = MugHeight / 2;
     const double index_finger_interval = 0.045;
-    const double thumb_partial = 0.005;
+    const double thumb_partial = 0.007;
 
     Eigen::MatrixXd TargetGraspPos(4,3);
     TargetGraspPos.row(2) << 0, MugRadius, central_point;
@@ -305,6 +289,7 @@ class ConstantPositionInput{
                                           msg_mug_position->orientation.x,
                                           msg_mug_position->orientation.y,
                                           msg_mug_position->orientation.z));
+
     std::vector<Isometry3<double>> track_position;
     CalcFingerTargetFrame(mug_position, &track_position);
 
@@ -342,7 +327,6 @@ class ConstantPositionInput{
   std::unique_ptr<MultibodyPlant<double>> plant_;
   std::unique_ptr<systems::Context<double>> plant_context_;
   std::vector<Isometry3<double>> saved_target;
-  // Eigen::VectorXd saved_joint_position;
   Eigen::VectorXd saved_joint_command;
   MatrixX<double> Px_half;
 };
