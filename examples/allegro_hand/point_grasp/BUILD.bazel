@@ -14,6 +14,15 @@ package(default_visibility = ["//visibility:public"])
 install_data()
 
 drake_cc_library(
+    name = "mug_state_set",
+    hdrs = ["mug_state_set.h"],
+    srcs = ["mug_state_set.cc"],
+    deps = [
+        "//math",
+    ],
+)
+
+drake_cc_library(
     name = "point_grasp_common",
     hdrs = ["point_grasp_common.h"],
     srcs = ["point_grasp_common.cc"],
@@ -66,6 +75,7 @@ drake_cc_binary(
         "//manipulation/models/allegro_hand_description:models",
     ],
     deps = [
+        ":mug_state_set",
         "//examples/allegro_hand:allegro_common",
         "//examples/allegro_hand:allegro_hand_state",
         "//examples/allegro_hand:allegro_lcm",

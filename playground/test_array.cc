@@ -103,11 +103,27 @@ void test5()
   std::cout<<k<<k2<<std::endl;
   Eigen::Quaternion<double> quat(a.rotation());
   std::cout<<quat.w()<<quat.y()<<quat.z()<<std::endl;
+}
 
+void test6()
+{
+  std::vector<drake::Isometry3<double>> v;
+  drake::Isometry3<double> k;
+  k.matrix().setIdentity();
+  k.matrix()(2,3)=100;
+
+  v.push_back(k);
+  // v[0] = 1;
+  // v[1] = 2;
+  // v[2] = 3;
+  std::cout<<v.size()<<std::endl;
+  v=std::vector<drake::Isometry3<double>>(4);
+  std::cout<<v.size()<<std::endl;
+  std::cout<<v[0].matrix()<<std::endl;
 }
 
 int main()
 {
-  test5();
+  test6();
 
 }
