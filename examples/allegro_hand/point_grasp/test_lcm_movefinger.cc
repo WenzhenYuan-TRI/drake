@@ -31,6 +31,7 @@ namespace {
 using drake::manipulation::planner::DifferentialInverseKinematicsResult;
 using drake::manipulation::planner::DifferentialInverseKinematicsParameters;
 using drake::manipulation::planner::DoDifferentialInverseKinematics;
+using drake::manipulation::planner::DifferentialInverseKinematicsStatus;
 using drake::multibody::multibody_plant::MultibodyPlant;
 using drake::multibody::Body;
 using drake::multibody::Frame;
@@ -87,11 +88,36 @@ class ConstantPositionInput{
         MovetoPositionUntilStuck(target_joint_pose);
 
         // grasp on points
-        mug_state_.GetGraspTargetFrames(mug_pose_, &track_position_);        
+        mug_state_.GetGraspTargetFrames(mug_pose_, &track_position_,
+                                        &relative_finger_pose_);        
         iniIKtarget();
         following_target_frame = true;
         KeepMovingUntilStuck(200);
-       
+        following_target_frame = false;
+
+        mug_state_.UpdateMugPose(mug_pose_);
+        while(true) {
+        // std::cout<<mug_pose_.matrix()<<std::endl;
+        mug_state_.GetXRotatedTargetFrame(-10/180.0*M_PI, &track_position_);
+        // std::cout<<track_position_[1].matrix()<<std::endl;
+        iniIKtarget();
+        std::cout<<"moving in one direction \n";
+        // std::cout<<mug_pose_.matrix()<<std::endl;
+
+        // following_target_frame = true;
+        sleep(10);
+        KeepMovingUntilStuck(2000);      
+        std::cout<<"moving done \n";
+
+
+        mug_state_.GetXRotatedTargetFrame(10/180.0*M_PI, &track_position_);
+        // std::cout<<track_position_[1].matrix()<<std::endl;
+        iniIKtarget(); 
+        std::cout<<"moving in one direction \n";
+        sleep(10);
+        KeepMovingUntilStuck(2000);   
+        std::cout<<"moving done \n";
+      }
     }
 
   private:
@@ -128,25 +154,24 @@ class ConstantPositionInput{
     Isometry3<double> fingertip_offset;
     fingertip_offset.matrix().setIdentity();
     Isometry3<double> finger_target_transfer;
+    fingertip_offset.translation() = Eigen::Vector3d(0, 0, 0.012);          
     for(unsigned int cur_finger=0; cur_finger < 4; cur_finger++){
       Eigen::Vector3d p_TipFinger(0, 0, 0.0267/* + 0.012*/);    
       const Frame<double>* fingertip_frame{nullptr};
       if(cur_finger == 0){ // if it's the thumb
           p_TipFinger(2) = 0.0423;
           fingertip_frame =&( plant_->GetFrameByName("link_15"));
-          fingertip_offset.translation() = Eigen::Vector3d(0, 0, 0.03-0.01);
-          finger_target_transfer = track_position_[cur_finger] * fingertip_offset;
+          // fingertip_offset.translation() = Eigen::Vector3d(0, 0, 0.03);
+          // finger_target_transfer = track_position_[cur_finger] * fingertip_offset;
       }
       else{
           fingertip_frame = &(plant_->GetFrameByName("link_"+std::to_string(
-                                                    cur_finger * 4 - 1)));
-          fingertip_offset.translation() = Eigen::Vector3d(0, 0, 0.012-0.01);
-          finger_target_transfer = track_position_[cur_finger] * fingertip_offset;
+                                                    cur_finger * 4 - 1)));          
       }
 
+      finger_target_transfer = track_position_[cur_finger] * fingertip_offset;
       p_W = finger_target_transfer.translation();
       saved_target[cur_finger] = finger_target_transfer;
-      std::cout<<finger_target_transfer.matrix()<<std::endl;
       ik_.AddPositionConstraint(*fingertip_frame, p_TipFinger, 
                             WorldFrame, p_W-p_W_tor, p_W+p_W_tor);
     }
@@ -182,15 +207,12 @@ class ConstantPositionInput{
     bool target_updated_flag = false;
     Isometry3<double> fingertip_offset;
     fingertip_offset.matrix().setIdentity();
-    fingertip_offset.translation() += Eigen::Vector3d(0, 0, 0.012-0.01);
+    fingertip_offset.translation() += Eigen::Vector3d(0, 0, 0.012);
     for(unsigned int cur_finger=0; cur_finger < 4; cur_finger++){
       // if the new position is similar to the saved one, don't need to update
-      Isometry3<double> finger_target_transfer = track_position_[cur_finger] *
-                                                fingertip_offset;
-      if(! saved_target[cur_finger].isApprox(finger_target_transfer)){
-        target_updated_flag = true;
-      }
-      else continue;
+      Isometry3<double> finger_target_transfer = mug_pose_ * 
+          relative_finger_pose_[cur_finger] * fingertip_offset;
+      if(saved_target[cur_finger].isApprox(finger_target_transfer)) continue;
 
       std::cout<<"differentical IK \n";
 
@@ -216,8 +238,12 @@ class ConstantPositionInput{
       DifferentialInverseKinematicsResult mbt_result = 
           DoDifferentialInverseKinematics(saved_joint_command, Eigen::VectorXd::Zero(16), 
                                           V_WE_desired, J_WE, *params_);
-      saved_joint_command += mbt_result.joint_velocities.value();
-      saved_target[cur_finger] = finger_target_transfer;
+      std::cout<<mbt_result.status<<std::endl;
+      if (mbt_result.status == DifferentialInverseKinematicsStatus::kNoSolutionFound) {
+        saved_joint_command += mbt_result.joint_velocities.value();
+        saved_target[cur_finger] = finger_target_transfer;
+        target_updated_flag = true;
+      }
     }
 
     if (target_updated_flag) SendJointCommand();
@@ -275,6 +301,7 @@ class ConstantPositionInput{
   SetMugStateControl mug_state_;
   Isometry3<double> mug_pose_;
   std::vector<Isometry3<double>> track_position_;
+  std::vector<Isometry3<double>> relative_finger_pose_;
 };
 
 int do_main() {

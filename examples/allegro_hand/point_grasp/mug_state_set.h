@@ -13,10 +13,14 @@ class SetMugStateControl{
 
     // return the 4 frames of the preset positions of the target of the
     // fingertips when only grasping on the mug, based on the frame of the object. 
-    void GetGraspTargetFrames(Isometry3<double> obj_frame, 
+    void GetGraspTargetFrames(const Isometry3<double>& obj_frame, 
+                              std::vector<Isometry3<double>>* finger_frames,
+                              std::vector<Isometry3<double>>* relative_finger_pose);
+
+    void GetXRotatedTargetFrame(const double rotation_angle,
                               std::vector<Isometry3<double>>* finger_frames);
 
-    void UpdateMugPose(Isometry3<double> mug_frame) {
+    void UpdateMugPose(const Isometry3<double>& mug_frame) {
         ref_mug_pose_ = mug_frame;
     }
 
