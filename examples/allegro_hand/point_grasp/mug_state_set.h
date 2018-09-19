@@ -19,6 +19,10 @@ class SetMugStateControl{
 
     void GetXRotatedTargetFrame(const double rotation_angle,
                               std::vector<Isometry3<double>>* finger_frames);
+    void GetYRotatedTargetFrame(const double rotation_angle,
+                              std::vector<Isometry3<double>>* finger_frames);
+    void GetTransTargetFrame(const Vector3<double> translation_vector,
+                              std::vector<Isometry3<double>>* finger_frames);
 
     void UpdateMugPose(const Isometry3<double>& mug_frame) {
         ref_mug_pose_ = mug_frame;

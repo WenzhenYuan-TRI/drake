@@ -96,28 +96,47 @@ class ConstantPositionInput{
         following_target_frame = false;
 
         mug_state_.UpdateMugPose(mug_pose_);
-        while(true) {
-        // std::cout<<mug_pose_.matrix()<<std::endl;
-        mug_state_.GetXRotatedTargetFrame(-10/180.0*M_PI, &track_position_);
-        // std::cout<<track_position_[1].matrix()<<std::endl;
+        mug_state_.GetXRotatedTargetFrame(-8/180.0*M_PI, &track_position_);
         iniIKtarget();
-        std::cout<<"moving in one direction \n";
-        // std::cout<<mug_pose_.matrix()<<std::endl;
-
-        // following_target_frame = true;
         sleep(10);
-        KeepMovingUntilStuck(2000);      
-        std::cout<<"moving done \n";
+        KeepMovingUntilStuck(2000);
+        while(true) {
+          mug_state_.UpdateMugPose(mug_pose_);
+          mug_state_.GetXRotatedTargetFrame(16/180.0*M_PI, &track_position_);
+          iniIKtarget();
+          std::cout<<"moving in one direction \n";
+          // std::cout<<mug_pose_.matrix()<<std::endl;
+          sleep(10);
+          KeepMovingUntilStuck(2000);      
+          std::cout<<"moving done \n";
 
+          mug_state_.UpdateMugPose(mug_pose_);
+          mug_state_.GetYRotatedTargetFrame(10/180.0*M_PI, &track_position_);
+          iniIKtarget();
+          std::cout<<"moving in one direction \n";
+          // std::cout<<mug_pose_.matrix()<<std::endl;
+          sleep(10);
+          KeepMovingUntilStuck(2000);      
+          std::cout<<"moving done \n";
 
-        mug_state_.GetXRotatedTargetFrame(10/180.0*M_PI, &track_position_);
-        // std::cout<<track_position_[1].matrix()<<std::endl;
-        iniIKtarget(); 
-        std::cout<<"moving in one direction \n";
-        sleep(10);
-        KeepMovingUntilStuck(2000);   
-        std::cout<<"moving done \n";
-      }
+          mug_state_.UpdateMugPose(mug_pose_);
+          mug_state_.GetTransTargetFrame(Eigen::Vector3d(-0.01, 0, 0), &track_position_);
+          iniIKtarget();
+          std::cout<<"moving in one direction \n";
+          // std::cout<<mug_pose_.matrix()<<std::endl;
+          sleep(10);
+          KeepMovingUntilStuck(2000);      
+          std::cout<<"moving done \n";
+
+          mug_state_.UpdateMugPose(mug_pose_);
+          mug_state_.GetXRotatedTargetFrame(-16/180.0*M_PI, &track_position_);
+          // std::cout<<track_position_[1].matrix()<<std::endl;
+          iniIKtarget(); 
+          std::cout<<"moving in one direction \n";
+          sleep(10);
+          KeepMovingUntilStuck(2000);   
+          std::cout<<"moving done \n";
+        }
     }
 
   private:
