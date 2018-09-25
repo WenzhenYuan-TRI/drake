@@ -304,8 +304,8 @@ class ConstantPositionInput{
         VectorX<double>::Constant(16, -0.5),
         VectorX<double>::Constant(16, 1.6)};
     std::pair<VectorX<double>, VectorX<double>> v_bounds = {
-        VectorX<double>::Constant(16, -0.7),
-        VectorX<double>::Constant(16, 0.7)};
+        VectorX<double>::Constant(16, -7),
+        VectorX<double>::Constant(16, 7)};
     params_->set_joint_position_limits(q_bounds);
     params_->set_joint_velocity_limits(v_bounds);
 
@@ -318,7 +318,10 @@ class ConstantPositionInput{
       // if the new position is similar to the saved one, don't need to update
       Isometry3<double> finger_target_transfer = mug_pose_ * 
           target_frame_for_differentialIK_[cur_finger] * fingertip_offset;
+      std::cout<<finger_target_transfer.matrix()<<std::endl;
       if(saved_target[cur_finger].isApprox(finger_target_transfer)) continue;
+
+      std::cout<<"differential IK \n";
 
       Eigen::Vector3d p_TipFinger(0, 0, 0.0267);    
       const Frame<double>* fingertip_frame{nullptr};
@@ -342,8 +345,9 @@ class ConstantPositionInput{
           DoDifferentialInverseKinematics(saved_joint_command,
                                           Eigen::VectorXd::Zero(16),
                                           V_WE_desired, J_WE, *params_);
+      std::cout<<mbt_result.status<<"\n";
       if (mbt_result.status == 
-          DifferentialInverseKinematicsStatus::kNoSolutionFound) {
+          DifferentialInverseKinematicsStatus::kSolutionFound) {
         saved_joint_command += mbt_result.joint_velocities.value();
         saved_target[cur_finger] = finger_target_transfer;
         target_updated_flag = true;
@@ -410,7 +414,7 @@ class ConstantPositionInput{
 int do_main() {
   ConstantPositionInput runner;
   runner.run_close_hand();
-  runner.run_rotate_X(5.0);
+  runner.run_rotate_X(8.0);
   return 0;
 }
 

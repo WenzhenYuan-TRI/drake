@@ -34,14 +34,16 @@ void SetMugStateControl::GetGraspTargetFrames(const Isometry3<double>& obj_frame
 
   Isometry3<double> grasp_offset;
   grasp_offset.matrix().setIdentity();
-  grasp_offset.translation() = Eigen::Vector3d(0, 0, -0.01);
+  grasp_offset.translation() = Eigen::Vector3d(0, 0, -0.007);
 
   for (int i=0; i < 4; i++) {
       (*relative_finger_pose)[i] = contact_mug_frames_[i] * grasp_offset;
       (*frame_poses)[i] = obj_frame * contact_mug_frames_[i] * grasp_offset;
   }
-  grasp_offset.translation() = Eigen::Vector3d(0, 0, 0.02);
+  grasp_offset.translation() = Eigen::Vector3d(0, 0, 0.017);
   (*frame_poses)[0] = (*frame_poses)[0] * grasp_offset;
+  // grasp_offset.translation() = Eigen::Vector3d(0, 0, 0.005);
+  // (*relative_finger_pose)[0] = (*relative_finger_pose)[0] * grasp_offset;
 }
 
 void SetMugStateControl::GetXRotatedTargetFrame(const double rotation_angle,
@@ -58,11 +60,11 @@ void SetMugStateControl::GetXRotatedTargetFrame(const double rotation_angle,
   temp.matrix().setIdentity();
   Isometry3<double> tar_mug_frame;
   tar_mug_frame.matrix().setIdentity();
-  tar_mug_frame.translation()<<0,0,-MugHeight/2;
+  tar_mug_frame.translation()<<0,0,-MugHeight*0.35;
   temp.rotate(Eigen::AngleAxis<double>(rotation_angle, Eigen::Vector3d::UnitX()));
   tar_mug_frame = temp * tar_mug_frame;
   temp.matrix().setIdentity();
-  temp.translation() << 0,0,MugHeight/2;
+  temp.translation() << 0,0,MugHeight*0.35;
   tar_mug_frame = temp * tar_mug_frame;
   tar_mug_frame = tar_mug_frame * ref_mug_pose_;
 

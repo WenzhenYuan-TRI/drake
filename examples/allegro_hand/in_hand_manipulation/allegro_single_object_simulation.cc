@@ -189,7 +189,7 @@ void DoMain() {
   Eigen::Vector3d rpy(M_PI / 2, 0, 0);
   X_WM.linear() =
       math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
-  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.082, 0.100);
+  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.080, 0.100);
   X_WM.makeAffine();
   plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
