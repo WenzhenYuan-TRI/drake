@@ -4,24 +4,27 @@ namespace drake {
 namespace examples {
 namespace allegro_hand {
 
-ObjectPosePublisher::ObjectPosePublisher(const MultibodyPlant<double>& plant, 
-     const std::string& obj_body_name) : 
-          plant_(&plant), obj_body_name_(obj_body_name) {
-  state_input_port_ = this->DeclareInputPort(systems::kVectorValued, 
-      plant_->num_multibody_states()).get_index();
+ObjectPosePublisher::ObjectPosePublisher(const MultibodyPlant<double>& plant,
+                                         const std::string& obj_body_name)
+    : plant_(&plant), obj_body_name_(obj_body_name) {
+  state_input_port_ = this->DeclareInputPort(systems::kVectorValued,
+                                             plant_->num_multibody_states())
+                          .get_index();
   plant_context_ = plant_->CreateDefaultContext();
   this->DeclarePeriodicPublish(kObjectStatePublishPeriod);
 }
 
-void ObjectPosePublisher::DoPublish(const systems::Context<double>& context,
-               const std::vector<const systems::PublishEvent<double>*>& ) const{
- const systems::BasicVector<double>* state_vector = this->EvalVectorInput(
-                                            context, state_input_port_);
-  plant_->tree().get_mutable_multibody_state_vector(plant_context_.get()) = 
+void ObjectPosePublisher::DoPublish(
+    const systems::Context<double>& context,
+    const std::vector<const systems::PublishEvent<double>*>&) const {
+  const systems::BasicVector<double>* state_vector =
+      this->EvalVectorInput(context, state_input_port_);
+  plant_->tree().get_mutable_multibody_state_vector(plant_context_.get()) =
       state_vector->get_value();
 
-  const auto X_WF = plant_->tree().CalcRelativeTransform(*plant_context_, 
-          plant_->world_frame(), plant_->GetFrameByName(obj_body_name_));
+  const auto X_WF = plant_->tree().CalcRelativeTransform(
+      *plant_context_, plant_->world_frame(),
+      plant_->GetFrameByName(obj_body_name_));
   Eigen::Quaternion<double> obj_roation_quaternion(X_WF.rotation());
   robotlocomotion::pose_t msg_obj_pose;
   msg_obj_pose.position.x = X_WF.translation()(0);

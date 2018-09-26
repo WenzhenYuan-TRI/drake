@@ -25,9 +25,8 @@ const double kLcmStatusPeriod = 0.003;
 
 /// Handles lcmt_allegro_command messages from a LcmSubscriberSystem.
 /// Has two output ports: one for the commanded position for each joint along
-/// with an estimate of the commanded velocity for each joint, and another for
-/// commanded additional feedforward joint torque. The joint torque command is
-/// currently not used.
+/// with a zero velocity for each joint, and another for commanded additional
+/// feedforward joint torque. The joint torque command is currently not used.
 class AllegroCommandReceiver : public systems::LeafSystem<double> {
  public:
   DRAKE_NO_COPY_NO_MOVE_NO_ASSIGN(AllegroCommandReceiver)
@@ -35,7 +34,7 @@ class AllegroCommandReceiver : public systems::LeafSystem<double> {
   explicit AllegroCommandReceiver(int num_joints = kAllegroNumJoints);
 
   /// Sets the initial position of the controlled hand prior to any
-  /// commands being received.  @p x contains the starting position.
+  /// commands being received.  @param x contains the starting position.
   /// This position will be the commanded position (with zero
   /// velocity) until a position message is received.  If this
   /// function is not called, the open hand pose will be the zero

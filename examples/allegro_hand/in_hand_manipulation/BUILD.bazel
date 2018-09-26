@@ -18,9 +18,9 @@ drake_cc_library(
     hdrs = ["mug_state_set.h"],
     srcs = ["mug_state_set.cc"],
     deps = [
-        "//math",
         "//lcm",
         "//lcmtypes:viewer",
+        "//math",
     ],
 )
 
@@ -29,9 +29,9 @@ drake_cc_library(
     hdrs = ["object_pose_publisher.h"],
     srcs = ["object_pose_publisher.cc"],
     deps = [
-        "//systems/framework:leaf_system",
-        "//multibody/multibody_tree/multibody_plant",
         "//lcm",
+        "//multibody/multibody_tree/multibody_plant",
+        "//systems/framework:leaf_system",
         "@lcmtypes_robotlocomotion",
     ],
 )
@@ -55,7 +55,6 @@ drake_cc_binary(
         "@lcmtypes_robotlocomotion",
     ],
 )
-
 
 drake_cc_binary(
     name = "allegro_single_object_simulation",

@@ -11,8 +11,6 @@ namespace allegro_hand {
 using systems::BasicVector;
 using systems::Context;
 using systems::DiscreteValues;
-using systems::State;
-using systems::SystemOutput;
 using systems::DiscreteUpdateEvent;
 
 AllegroCommandReceiver::AllegroCommandReceiver(int num_joints)
@@ -105,7 +103,6 @@ lcmt_allegro_status AllegroStatusSender::MakeOutputStatus() const {
   msg.joint_position_measured.resize(msg.num_joints, 0);
   msg.joint_velocity_estimated.resize(msg.num_joints, 0);
   msg.joint_position_commanded.resize(msg.num_joints, 0);
-  msg.joint_position_ipo.resize(msg.num_joints, 0);
   msg.joint_torque_commanded.resize(msg.num_joints, 0);
   return msg;
 }
