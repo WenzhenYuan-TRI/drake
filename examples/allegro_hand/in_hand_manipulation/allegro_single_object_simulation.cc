@@ -74,8 +74,16 @@ void DoMain() {
       "allegro_hand_description/sdf/allegro_hand_description_left.sdf");
   const std::string ObjectModelPath = FindResourceOrThrow("drake/examples/"
                   "allegro_hand/in_hand_manipulation/models/simple_mug.sdf");
-  multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
-  multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
+  auto hand_index = multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
+  auto obj_index = multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
+
+  //////// test------
+  auto test_obj = 
+      multibody::parsing::AddModelFromSdfFile(
+        FindResourceOrThrow("drake/examples/"
+                  "allegro_hand/in_hand_manipulation/models/simple_mug2.sdf"), 
+        &plant, &scene_graph);
+
 
   // Weld the hand to the world frame
   const auto& joint_hand_root = plant.GetBodyByName("hand_root");
@@ -180,8 +188,8 @@ void DoMain() {
       diagram->GetMutableSubsystemContext(plant, diagram_context.get());
 
   // Initialize the mug pose to be right in the middle between the fingers.
-  const multibody::Body<double>& mug = plant.GetBodyByName("main_body");
-  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root");
+  const multibody::Body<double>& mug = plant.GetBodyByName("main_body", obj_index);
+  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root", hand_index);
   std::vector<Eigen::Isometry3d> X_WB_all;
   plant.tree().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
   const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
@@ -189,9 +197,35 @@ void DoMain() {
   Eigen::Vector3d rpy(M_PI / 2, 0, 0);
   X_WM.linear() =
       math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
-  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.080, 0.100);
+  X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.075, 0.100);
   X_WM.makeAffine();
   plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
+
+  ///// Test---------
+  const multibody::Body<double>& mug2 = plant.GetBodyByName("main_body2", test_obj);
+
+  X_WM.translation() += Eigen::Vector3d(0,0.2,0);
+
+  Isometry3<double> temp; 
+  temp.matrix().setIdentity();
+  Isometry3<double> tar_mug_frame;
+  // tar_mug_frame.matrix().setIdentity();
+  // tar_mug_frame.translation()<<0,0,-0.14/2;
+  // temp.rotate(Eigen::AngleAxis<double>(10/180.0*M_PI, Eigen::Vector3d::UnitY()));
+  // tar_mug_frame = temp * tar_mug_frame;
+  // temp.matrix().setIdentity();
+  // temp.translation() << 0,0,0.14/2;
+  // tar_mug_frame = temp * tar_mug_frame;
+  // tar_mug_frame = X_WM * tar_mug_frame;
+
+  tar_mug_frame = X_WM; 
+  tar_mug_frame.translation() += Eigen::Vector3d(0,0,0.005);
+  plant.tree().SetFreeBodyPoseOrThrow(mug2, tar_mug_frame, &plant_context);
+
+
+
+
+  //// end testing -----------
 
   lcm.StartReceiveThread();
 

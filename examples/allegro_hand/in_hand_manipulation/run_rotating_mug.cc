@@ -102,7 +102,7 @@ class ConstantPositionInput{
     mug_state_.UpdateMugPose(mug_pose_);
     mug_state_.GetXRotatedTargetFrame(
                 rotation_angle/180.0*M_PI, &target_fingertip_frame_);
-    std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
+    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
     iniIKtarget();
     std::cout<<"Rotating in one direction \n";
     // sleep(10);
@@ -112,7 +112,7 @@ class ConstantPositionInput{
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetXRotatedTargetFrame(
                   -rotation_angle/90.0*M_PI, &target_fingertip_frame_);
-    std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
+    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
       // sleep(10);
@@ -121,7 +121,7 @@ class ConstantPositionInput{
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetXRotatedTargetFrame(
                   rotation_angle/90.0*M_PI, &target_fingertip_frame_);
-    std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
+    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
       // sleep(10);
@@ -137,7 +137,6 @@ class ConstantPositionInput{
                 rotation_angle/180.0*M_PI, &target_fingertip_frame_);
     iniIKtarget();
     std::cout<<"Rotating in one direction \n";
-    sleep(10);
     KeepMovingUntilStuck(2000);
 
     while (true) {
@@ -146,7 +145,6 @@ class ConstantPositionInput{
                   -rotation_angle/90.0*M_PI, &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);            
 
       mug_state_.UpdateMugPose(mug_pose_);
@@ -154,7 +152,6 @@ class ConstantPositionInput{
                   rotation_angle/90.0*M_PI, &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);            
     }
   }
@@ -167,7 +164,6 @@ class ConstantPositionInput{
                 rotation_angle/180.0*M_PI, &target_fingertip_frame_);
     iniIKtarget();
     std::cout<<"Rotating in one direction \n";
-    sleep(10);
     KeepMovingUntilStuck(2000);
 
     while (true) {
@@ -176,7 +172,6 @@ class ConstantPositionInput{
                   -rotation_angle/90.0*M_PI, &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);            
 
       mug_state_.UpdateMugPose(mug_pose_);
@@ -184,7 +179,6 @@ class ConstantPositionInput{
                   rotation_angle/90.0*M_PI, &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);      
       
     }
@@ -195,29 +189,25 @@ class ConstantPositionInput{
   void run_translation() {
     mug_state_.UpdateMugPose(mug_pose_);
     mug_state_.GetTransTargetFrame(
-                Eigen::Vector3d(0,0, -0.007), &target_fingertip_frame_);
+                Eigen::Vector3d(-0.015,-0.006, 0.006), &target_fingertip_frame_);
     iniIKtarget();
     std::cout<<"Translating in one direction \n";
-    sleep(10);
-    KeepMovingUntilStuck(2000);      
-    
+    KeepMovingUntilStuck(2000);          
 
     while(true) {
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetTransTargetFrame(
-                  Eigen::Vector3d(0, 0,0.005), &target_fingertip_frame_);
+                  Eigen::Vector3d(0.012, 0.012,-0.012), &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Translating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);      
       
 
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetTransTargetFrame(
-                  Eigen::Vector3d(0, 0, -0.005), &target_fingertip_frame_);
+                  Eigen::Vector3d(-0.012, -0.012, 0.012), &target_fingertip_frame_);
       iniIKtarget();
       std::cout<<"Translating in one direction \n";
-      sleep(10);
       KeepMovingUntilStuck(2000);            
     }
   }
@@ -318,10 +308,7 @@ class ConstantPositionInput{
       // if the new position is similar to the saved one, don't need to update
       Isometry3<double> finger_target_transfer = mug_pose_ * 
           target_frame_for_differentialIK_[cur_finger] * fingertip_offset;
-      std::cout<<finger_target_transfer.matrix()<<std::endl;
       if(saved_target[cur_finger].isApprox(finger_target_transfer)) continue;
-
-      std::cout<<"differential IK \n";
 
       Eigen::Vector3d p_TipFinger(0, 0, 0.0267);    
       const Frame<double>* fingertip_frame{nullptr};
@@ -345,7 +332,6 @@ class ConstantPositionInput{
           DoDifferentialInverseKinematics(saved_joint_command,
                                           Eigen::VectorXd::Zero(16),
                                           V_WE_desired, J_WE, *params_);
-      std::cout<<mbt_result.status<<"\n";
       if (mbt_result.status == 
           DifferentialInverseKinematicsStatus::kSolutionFound) {
         saved_joint_command += mbt_result.joint_velocities.value();
@@ -414,7 +400,8 @@ class ConstantPositionInput{
 int do_main() {
   ConstantPositionInput runner;
   runner.run_close_hand();
-  runner.run_rotate_X(8.0);
+  // runner.run_rotate_X(8.0);
+  runner.run_translation();
   return 0;
 }
 

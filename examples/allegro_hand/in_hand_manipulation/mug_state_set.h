@@ -47,7 +47,7 @@ class SetMugStateControl{
     // parameters about the grasp point
     const double central_point = MugHeight / 2;
     const double index_finger_interval = 0.045;
-    const double thumb_partial = 0.007;
+    const double thumb_partial = 0.012;
 
 };
 
