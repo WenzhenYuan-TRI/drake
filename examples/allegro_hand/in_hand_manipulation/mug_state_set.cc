@@ -6,15 +6,15 @@ namespace examples {
 namespace allegro_hand {
 
 SetMugStateControl::SetMugStateControl() {
-    // ini the contact frames on the mug
+    // Ini the target fingertip poses on the mug
     Eigen::MatrixXd TargetGraspPos(4,3);
-    TargetGraspPos.row(2) << 0, MugRadius, central_point;
-    TargetGraspPos.row(1) << 0, MugRadius, central_point - index_finger_interval;
-    TargetGraspPos.row(3) << 0, MugRadius, central_point + index_finger_interval;
-    TargetGraspPos.row(0) << 0, -MugRadius, central_point - thumb_partial;
+    TargetGraspPos.row(2) << 0, MugRadius_, central_point_;
+    TargetGraspPos.row(1) << 0, MugRadius_, central_point_ - index_finger_interval_;
+    TargetGraspPos.row(3) << 0, MugRadius_, central_point_ + index_finger_interval_;
+    TargetGraspPos.row(0) << 0, -MugRadius_, central_point_ - thumb_partial_;
     Eigen::Vector4d TargetRotAngle(M_PI/2, -M_PI/2, -M_PI/2, -M_PI/2);
 
-    Eigen::Isometry3d X_BF; /* pose of cup upper frame F in mug body frame B */
+    Eigen::Isometry3d X_BF;
     X_BF.matrix().setIdentity();
     for (int i=0; i < 4; i++){
       X_BF.translation() = TargetGraspPos.row(i);
@@ -24,14 +24,18 @@ SetMugStateControl::SetMugStateControl() {
     }
 }
 
-void SetMugStateControl::GetGraspTargetFrames(const Isometry3<double>& obj_frame, 
-                                    std::vector<Isometry3<double>>* frame_poses,
-                                    std::vector<Isometry3<double>>* relative_finger_pose) {
+void SetMugStateControl::GetGraspTargetFrames(
+    const Isometry3<double>& obj_frame,
+    std::vector<Isometry3<double>>* frame_poses,
+    std::vector<Isometry3<double>>* relative_finger_pose) {
   if (frame_poses->size() < 4) 
       *frame_poses = std::vector<drake::Isometry3<double>>(4);
   if (relative_finger_pose->size() < 4) 
       *relative_finger_pose = std::vector<drake::Isometry3<double>>(4);
 
+  // setting the target pose of the fingertips to be a some poses in the minus
+  // Z direction, so that the fingers can exerting some force on the mug after
+  // reaching the target surface.
   Isometry3<double> grasp_offset;
   grasp_offset.matrix().setIdentity();
   grasp_offset.translation() = Eigen::Vector3d(0, 0, -0.007);
@@ -40,10 +44,10 @@ void SetMugStateControl::GetGraspTargetFrames(const Isometry3<double>& obj_frame
       (*relative_finger_pose)[i] = contact_mug_frames_[i] * grasp_offset;
       (*frame_poses)[i] = obj_frame * contact_mug_frames_[i] * grasp_offset;
   }
+  // For the initial IK calculation, the target of the thumb is set to be lower
+  // than the actual target, so that to prevent collision with the mug.
   grasp_offset.translation() = Eigen::Vector3d(0, 0, 0.017);
   (*frame_poses)[0] = (*frame_poses)[0] * grasp_offset;
-  // grasp_offset.translation() = Eigen::Vector3d(0, 0, 0.005);
-  // (*relative_finger_pose)[0] = (*relative_finger_pose)[0] * grasp_offset;
 }
 
 void SetMugStateControl::GetXRotatedTargetFrame(const double rotation_angle,
@@ -60,11 +64,11 @@ void SetMugStateControl::GetXRotatedTargetFrame(const double rotation_angle,
   temp.matrix().setIdentity();
   Isometry3<double> tar_mug_frame;
   tar_mug_frame.matrix().setIdentity();
-  tar_mug_frame.translation()<<0,0,-MugHeight*0.5;
+  tar_mug_frame.translation()<<0,0,-MugHeight_*0.5;
   temp.rotate(Eigen::AngleAxis<double>(rotation_angle, Eigen::Vector3d::UnitX()));
   tar_mug_frame = temp * tar_mug_frame;
   temp.matrix().setIdentity();
-  temp.translation() << 0,0,MugHeight*0.5;
+  temp.translation() << 0,0,MugHeight_*0.5;
   tar_mug_frame = temp * tar_mug_frame;
   tar_mug_frame = ref_mug_pose_ * tar_mug_frame;
 
@@ -87,11 +91,11 @@ void SetMugStateControl::GetYRotatedTargetFrame(const double rotation_angle,
   temp.matrix().setIdentity();
   Isometry3<double> tar_mug_frame;
   tar_mug_frame.matrix().setIdentity();
-  tar_mug_frame.translation()<<0,0,-MugHeight/2;
+  tar_mug_frame.translation()<<0,0,-MugHeight_ * 0.5;
   temp.rotate(Eigen::AngleAxis<double>(rotation_angle, Eigen::Vector3d::UnitY()));
   tar_mug_frame = temp * tar_mug_frame;
   temp.matrix().setIdentity();
-  temp.translation() << 0,0,MugHeight/2;
+  temp.translation() << 0,0,MugHeight_ * 0.5;
   tar_mug_frame = temp * tar_mug_frame;
   tar_mug_frame = ref_mug_pose_ * tar_mug_frame;
 
@@ -147,7 +151,6 @@ void SetMugStateControl::PublishTargetFrametoLcm(
   PublishFramesToLcm("FingerTargetFrame", frame_poses, frame_names, &lcm);
 }
 
-// Test: publish frame to lcm 
 void PublishFramesToLcm(const std::string& channel_name,
                         const std::vector<Eigen::Isometry3d>& poses,
                         const std::vector<std::string>& names,

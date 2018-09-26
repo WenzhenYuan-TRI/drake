@@ -1,8 +1,8 @@
 /// @file
 ///
-/// This file set up a control procedure of using the Allegro hand to rotate
-/// mug in different directions.
-
+/// This file set up a control procedure of using the Allegro hand to rotate or
+/// translate the mug in controlled directions. The program currently runs only
+/// in simulation, together with the allegro_single_object_simulation.cc
 
 #include "lcm/lcm-cpp.hpp"
 
@@ -41,13 +41,13 @@ const char* const kLcmStatusChannel = "ALLEGRO_STATUS";
 const char* const kLcmCommandChannel = "ALLEGRO_COMMAND";
 const char* const kLcmObjTargetChannel = "TARGET_OBJ_POSE";
 
-class ConstantPositionInput{
+class HandPositionCommander{
  public:
-  ConstantPositionInput(){
+  HandPositionCommander(){
     lcm_.subscribe(kLcmStatusChannel,
-                  &ConstantPositionInput::HandleStatus, this);
+                  &HandPositionCommander::HandleStatus, this);
     lcm_.subscribe(kLcmObjTargetChannel,
-                  &ConstantPositionInput::TargetFrameInput, this);
+                  &HandPositionCommander::TargetFrameInput, this);
 
     // Load plant of the hand. This program only runs for the right hand
     plant_ = std::make_unique<MultibodyPlant<double>>(1e-3); 
@@ -73,10 +73,10 @@ class ConstantPositionInput{
     target_fingertip_frame_.resize(4);
 
     // Ini command for Allegro hand
-    allegro_command.num_joints = kAllegroNumJoints;
-    allegro_command.joint_position.resize(kAllegroNumJoints, 0.);
-    allegro_command.num_torques = 0;
-    allegro_command.joint_torque.resize(kAllegroNumJoints, 0.);
+    allegro_command_.num_joints = kAllegroNumJoints;
+    allegro_command_.joint_position.resize(kAllegroNumJoints, 0.);
+    allegro_command_.num_torques = 0;
+    allegro_command_.joint_torque.resize(0);
   }
 
   void run_close_hand() {
@@ -102,29 +102,23 @@ class ConstantPositionInput{
     mug_state_.UpdateMugPose(mug_pose_);
     mug_state_.GetXRotatedTargetFrame(
                 rotation_angle/180.0*M_PI, &target_fingertip_frame_);
-    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
     iniIKtarget();
     std::cout<<"Rotating in one direction \n";
-    // sleep(10);
     KeepMovingUntilStuck(2000);
 
     while (true) {
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetXRotatedTargetFrame(
                   -rotation_angle/90.0*M_PI, &target_fingertip_frame_);
-    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      // sleep(10);
       KeepMovingUntilStuck(2000);            
 
       mug_state_.UpdateMugPose(mug_pose_);
       mug_state_.GetXRotatedTargetFrame(
                   rotation_angle/90.0*M_PI, &target_fingertip_frame_);
-    // std::cout<<mug_pose_.matrix()<<std::endl<<target_fingertip_frame_[2].matrix()<<std::endl;
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
-      // sleep(10);
       KeepMovingUntilStuck(2000);            
     }
   }
@@ -180,12 +174,10 @@ class ConstantPositionInput{
       iniIKtarget();
       std::cout<<"Rotating in one direction \n";
       KeepMovingUntilStuck(2000);      
-      
     }
   }
 
-  /// Move the mug in the space
-  /// not tested yet
+  /// Translate the mug position in the space
   void run_translation() {
     mug_state_.UpdateMugPose(mug_pose_);
     mug_state_.GetTransTargetFrame(
@@ -214,12 +206,14 @@ class ConstantPositionInput{
 
  private:
   inline void PublishPositionCommand(const Eigen::VectorXd target_joint_pose) {
-    Eigen::VectorXd::Map(&allegro_command.joint_position[0], 
+    Eigen::VectorXd::Map(&allegro_command_.joint_position[0], 
                            kAllegroNumJoints) = target_joint_pose;
-    lcm_.publish(kLcmCommandChannel, &allegro_command);
+    lcm_.publish(kLcmCommandChannel, &allegro_command_);
   }
 
-  inline void KeepMovingUntilStuck(int count = 40) {  
+  inline void KeepMovingUntilStuck(int count = 40) {
+    // the first loop serves as a time delay to filter out the noise in the
+    // hand's motion.
     for (int i = 0; i<count; i++){
         while (0 == lcm_.handleTimeout(10) || allegro_status_.utime == -1) { }
     }
@@ -320,7 +314,6 @@ class ConstantPositionInput{
         fingertip_frame = &(plant_->GetFrameByName("link_"+std::to_string(
                                                    cur_finger * 4 - 1)));
       }
-
       Vector6<double> V_WE_desired =
           manipulation::planner::ComputePoseDiffInCommonFrame(
           saved_target[cur_finger], finger_target_transfer);
@@ -343,9 +336,9 @@ class ConstantPositionInput{
   }
 
   void SendJointCommand(){
-    Eigen::VectorXd::Map(&allegro_command.joint_position[0], kAllegroNumJoints)
+    Eigen::VectorXd::Map(&allegro_command_.joint_position[0], kAllegroNumJoints)
                            = Px_half * saved_joint_command;
-    lcm_.publish(kLcmCommandChannel, &allegro_command);
+    lcm_.publish(kLcmCommandChannel, &allegro_command_);
   }
 
 
@@ -376,8 +369,8 @@ class ConstantPositionInput{
 
   ::lcm::LCM lcm_;
   lcmt_allegro_status allegro_status_;
-  lcmt_allegro_command allegro_command;
-  AllegroHandState hand_state;
+  lcmt_allegro_command allegro_command_;
+  AllegroHandMotionState hand_state;
 
   bool flag_hand_is_moving_ = true;
   bool updating_target_frame_ = false; 
@@ -398,10 +391,11 @@ class ConstantPositionInput{
 };
 
 int do_main() {
-  ConstantPositionInput runner;
+  HandPositionCommander runner;
   runner.run_close_hand();
-  // runner.run_rotate_X(8.0);
-  runner.run_translation();
+  // test moving the mug into different poses. Could choose from run_rotate_Y,
+  // run_rotate_Z, or run_translation
+  runner.run_rotate_X(8.0);
   return 0;
 }
 

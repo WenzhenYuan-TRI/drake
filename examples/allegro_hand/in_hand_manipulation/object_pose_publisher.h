@@ -17,9 +17,11 @@ namespace allegro_hand {
 
 using drake::multibody::multibody_plant::MultibodyPlant;
 
+const std::string kObjectPoseLCMChannel = "TARGET_OBJ_POSE";
+
 const double kObjectStatePublishPeriod = 0.05;
 
-/// The class track the pose of the target object in the plant, and publish it
+/// The class track the pose of the target object and publish it
 /// to LCM channel
 class ObjectPosePublisher : public systems::LeafSystem<double> {
 public:
@@ -39,9 +41,6 @@ private:
   const std::string obj_body_name_;
   std::unique_ptr<systems::Context<double>> plant_context_;
   int state_input_port_{-1};
-
-  // ::lcm::LCM lcm_;
-  const std::string kObjectPoseLCMChannel = "TARGET_OBJ_POSE";
 };
 
 
@@ -49,4 +48,3 @@ private:
 }  // namespace allegro_hand
 }  // namespace examples
 }  // namespace drake
-

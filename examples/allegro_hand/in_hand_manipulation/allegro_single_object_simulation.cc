@@ -1,9 +1,12 @@
 /// @file
 ///
-/// This file set up a simulation environment of an allegro hand an object. It
-/// is intended to be a be a direct replacement for the Allegro Hand driver and
-/// the actual robot hardware. The only controllable interface in this instance
-/// is the joints on the hand.
+/// This file set up a simulation environment of an allegro hand an object.The
+/// only controllable interface in this instance is the target positions of the
+/// joints on the hand fingers. The
+/// simulator connects with the control program through LCM, with the output of
+/// the hand state, and take in the command of the finger joint positions. The
+/// simulation also measures the pose of the object and publish it
+/// through LCM, which is similar to an ideal motion tracking system.
 
 #include <gflags/gflags.h>
 
@@ -59,11 +62,11 @@ void DoMain() {
   systems::DiagramBuilder<double> builder;
   lcm::DrakeLcm lcm;
 
-  geometry::SceneGraph<double>& scene_graph = 
-      *builder.AddSystem<geometry::SceneGraph>();
-  scene_graph.set_name("scene_graph");
+  geometry::SceneGraph<double>* scene_graph = 
+      builder.AddSystem<geometry::SceneGraph>();
+  scene_graph->set_name("scene_graph");
 
-  MultibodyPlant<double>& plant = *builder.AddSystem<MultibodyPlant>
+  MultibodyPlant<double>* plant = builder.AddSystem<MultibodyPlant>
                                   (FLAGS_max_time_step);
   std::string HandSdfPath;
   if (FLAGS_use_right_hand) 
@@ -74,65 +77,59 @@ void DoMain() {
       "allegro_hand_description/sdf/allegro_hand_description_left.sdf");
   const std::string ObjectModelPath = FindResourceOrThrow("drake/examples/"
                   "allegro_hand/in_hand_manipulation/models/simple_mug.sdf");
-  auto hand_index = multibody::parsing::AddModelFromSdfFile(HandSdfPath, &plant, &scene_graph);
-  auto obj_index = multibody::parsing::AddModelFromSdfFile(ObjectModelPath, &plant, &scene_graph);
-
-  //////// test------
-  auto test_obj = 
-      multibody::parsing::AddModelFromSdfFile(
-        FindResourceOrThrow("drake/examples/"
-                  "allegro_hand/in_hand_manipulation/models/simple_mug2.sdf"), 
-        &plant, &scene_graph);
-
+  auto hand_index = multibody::parsing::AddModelFromSdfFile(
+                    HandSdfPath, plant, scene_graph);
+  auto obj_index = multibody::parsing::AddModelFromSdfFile(
+                   ObjectModelPath, plant, scene_graph);
 
   // Weld the hand to the world frame
-  const auto& joint_hand_root = plant.GetBodyByName("hand_root");
-  plant.AddJoint<multibody::WeldJoint>( "weld_hand", plant.world_body(), {},
+  const auto& joint_hand_root = plant->GetBodyByName("hand_root");
+  plant->AddJoint<multibody::WeldJoint>( "weld_hand", plant->world_body(), {},
       joint_hand_root, {}, Isometry3<double>::Identity());
 
   // Add gravity, if needed
   if (FLAGS_add_gravity)
-    plant.AddForceElement<multibody::UniformGravityFieldElement>(
+    plant->AddForceElement<multibody::UniformGravityFieldElement>(
         -9.81 * Eigen::Vector3d::UnitZ());
-  plant.Finalize(&scene_graph);
+  plant->Finalize(scene_graph);
 
   // Visualization
-  geometry::ConnectDrakeVisualizer(&builder, scene_graph);
-  DRAKE_DEMAND(!!plant.get_source_id());
-  builder.Connect(plant.get_geometry_poses_output_port(),
-      scene_graph.get_source_pose_port(plant.get_source_id().value()));
-  builder.Connect(scene_graph.get_query_output_port(),
-                  plant.get_geometry_query_input_port());
+  geometry::ConnectDrakeVisualizer(&builder, *scene_graph);
+  DRAKE_DEMAND(!!plant->get_source_id());
+  builder.Connect(plant->get_geometry_poses_output_port(),
+      scene_graph->get_source_pose_port(plant->get_source_id().value()));
+  builder.Connect(scene_graph->get_query_output_port(),
+                  plant->get_geometry_query_input_port());
 
   // Publish contact results for visualization.
-  const auto& contact_results_to_lcm = *builder.AddSystem<
-      multibody::multibody_plant::ContactResultsToLcmSystem>(plant);
-  const auto& contact_results_publisher = *builder.AddSystem(
+  const auto contact_results_to_lcm = builder.AddSystem<
+      multibody::multibody_plant::ContactResultsToLcmSystem>(*plant);
+  const auto contact_results_publisher = builder.AddSystem(
       systems::lcm::LcmPublisherSystem::Make<lcmt_contact_results_for_viz>
       ("CONTACT_RESULTS", &lcm));
   // Contact results to lcm msg.
-  builder.Connect(plant.get_contact_results_output_port(),
-                  contact_results_to_lcm.get_input_port(0));
-  builder.Connect(contact_results_to_lcm.get_output_port(0),
-                  contact_results_publisher.get_input_port());
+  builder.Connect(plant->get_contact_results_output_port(),
+                  contact_results_to_lcm->get_input_port(0));
+  builder.Connect(contact_results_to_lcm->get_output_port(0),
+                  contact_results_publisher->get_input_port());
 
   // PID Controller for the hand joints
   VectorX<double> kp, kd, ki;
   MatrixX<double> Px, Py;
-  GetControlPortMapping(plant, &Px, &Py);
+  GetControlPortMapping(*plant, &Px, &Py);
   SetPositionControlledGains(&kp, &ki, &kd);
   auto hand_controller = builder.AddSystem<
       systems::controllers::PidController>(Px, Py, kp, ki, kd); 
-  builder.Connect(plant.get_continuous_state_output_port(),
+  builder.Connect(plant->get_continuous_state_output_port(),
                  hand_controller->get_input_port_estimated_state());
   builder.Connect(hand_controller->get_output_port_control(),
-                 plant.get_actuation_input_port());  
+                 plant->get_actuation_input_port());  
 
   // Creat an output port from the plant that only outputs the status of the
   // hand fingers
   const auto hand_status_converter = 
       builder.AddSystem<systems::MatrixGain<double>>(Px);
-  builder.Connect(plant.get_continuous_state_output_port(),
+  builder.Connect(plant->get_continuous_state_output_port(),
                   hand_status_converter->get_input_port());
   const auto hand_output_torque_converter = 
       builder.AddSystem<systems::MatrixGain<double>>(Py);
@@ -173,25 +170,25 @@ void DoMain() {
 
   // Publish the pose of the mug through LCM
   auto obj_pose_publisher = builder.AddSystem<ObjectPosePublisher>(
-        plant, "main_body");
-  builder.Connect(plant.get_continuous_state_output_port(),
+        *plant, "main_body");
+  builder.Connect(plant->get_continuous_state_output_port(),
                   obj_pose_publisher->get_state_input_port());
 
   // Now the model is complete.
   std::unique_ptr<systems::Diagram<double>> diagram = builder.Build();
-  geometry::DispatchLoadMessage(scene_graph, &lcm);
+  geometry::DispatchLoadMessage(*scene_graph, &lcm);
   // Create a context for this system
   std::unique_ptr<systems::Context<double>> diagram_context =
       diagram->CreateDefaultContext();
   diagram->SetDefaultContext(diagram_context.get());
   systems::Context<double>& plant_context =
-      diagram->GetMutableSubsystemContext(plant, diagram_context.get());
+      diagram->GetMutableSubsystemContext(*plant, diagram_context.get());
 
   // Initialize the mug pose to be right in the middle between the fingers.
-  const multibody::Body<double>& mug = plant.GetBodyByName("main_body", obj_index);
-  const multibody::Body<double>& hand = plant.GetBodyByName("hand_root", hand_index);
+  const multibody::Body<double>& mug = plant->GetBodyByName("main_body", obj_index);
+  const multibody::Body<double>& hand = plant->GetBodyByName("hand_root", hand_index);
   std::vector<Eigen::Isometry3d> X_WB_all;
-  plant.tree().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
+  plant->tree().CalcAllBodyPosesInWorld(plant_context, &X_WB_all);
   const Eigen::Vector3d& p_WHand = X_WB_all[hand.index()].translation();
   Eigen::Isometry3d X_WM;
   Eigen::Vector3d rpy(M_PI / 2, 0, 0);
@@ -199,33 +196,7 @@ void DoMain() {
       math::RotationMatrix<double>(math::RollPitchYaw<double>(rpy)).matrix();
   X_WM.translation() = p_WHand + Eigen::Vector3d(0.095, 0.075, 0.100);
   X_WM.makeAffine();
-  plant.tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
-
-  ///// Test---------
-  const multibody::Body<double>& mug2 = plant.GetBodyByName("main_body2", test_obj);
-
-  X_WM.translation() += Eigen::Vector3d(0,0.2,0);
-
-  Isometry3<double> temp; 
-  temp.matrix().setIdentity();
-  Isometry3<double> tar_mug_frame;
-  // tar_mug_frame.matrix().setIdentity();
-  // tar_mug_frame.translation()<<0,0,-0.14/2;
-  // temp.rotate(Eigen::AngleAxis<double>(10/180.0*M_PI, Eigen::Vector3d::UnitY()));
-  // tar_mug_frame = temp * tar_mug_frame;
-  // temp.matrix().setIdentity();
-  // temp.translation() << 0,0,0.14/2;
-  // tar_mug_frame = temp * tar_mug_frame;
-  // tar_mug_frame = X_WM * tar_mug_frame;
-
-  tar_mug_frame = X_WM; 
-  tar_mug_frame.translation() += Eigen::Vector3d(0,0,0.005);
-  plant.tree().SetFreeBodyPoseOrThrow(mug2, tar_mug_frame, &plant_context);
-
-
-
-
-  //// end testing -----------
+  plant->tree().SetFreeBodyPoseOrThrow(mug, X_WM, &plant_context);
 
   lcm.StartReceiveThread();
 
@@ -238,7 +209,7 @@ void DoMain() {
   hand_command_receiver->set_initial_position(
       &diagram->GetMutableSubsystemContext(*hand_command_receiver,
                                            &simulator.get_mutable_context()),
-      VectorX<double>::Zero(plant.num_actuators()));
+      VectorX<double>::Zero(plant->num_actuators()));
 
   sleep(1);
 

@@ -13,7 +13,6 @@ ObjectPosePublisher::ObjectPosePublisher(const MultibodyPlant<double>& plant,
   this->DeclarePeriodicPublish(kObjectStatePublishPeriod);
 }
 
-
 void ObjectPosePublisher::DoPublish(const systems::Context<double>& context,
                const std::vector<const systems::PublishEvent<double>*>& ) const{
  const systems::BasicVector<double>* state_vector = this->EvalVectorInput(
@@ -40,4 +39,3 @@ void ObjectPosePublisher::DoPublish(const systems::Context<double>& context,
 }  // namespace allegro_hand
 }  // namespace examples
 }  // namespace drake
-

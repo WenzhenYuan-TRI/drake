@@ -4,6 +4,8 @@ namespace drake {
 namespace examples {
 namespace allegro_hand {
 
+const double AllegroHandMotionState::velocity_thresh_ = 0.07;
+
 void SetPositionControlledGains(Eigen::VectorXd* Kp, Eigen::VectorXd* Ki,
                                 Eigen::VectorXd* Kd) {
   *Kp = Eigen::VectorXd::Ones(kAllegroNumJoints) * 0.05;
@@ -42,6 +44,8 @@ std::map<std::string, int> GetJointNameMapping() {
   return joint_name_mapping;
 }
 
+// TODO (WenzhenYuan-TRI): Merge this function with the updated functions in
+// multibody plant (#9455)
 void GetControlPortMapping(
     const multibody::multibody_plant::MultibodyPlant<double>& plant,
     MatrixX<double>* Px, MatrixX<double>* Py) {
@@ -80,13 +84,13 @@ void GetControlPortMapping(
   }
 }
 
-AllegroHandState::AllegroHandState()
-    : allegro_num_joints_(kAllegroNumJoints),
-      finger_num_(allegro_num_joints_ / 4),
-      is_joint_stuck(allegro_num_joints_),
-      is_finger_stuck(finger_num_) {}
+AllegroHandMotionState::AllegroHandMotionState()
+    : finger_num_(allegro_num_joints_ / 4),
+      is_joint_stuck_(allegro_num_joints_),
+      is_finger_stuck_(finger_num_) {}
 
-void AllegroHandState::Update(const lcmt_allegro_status& allegro_state_msg) {
+void AllegroHandMotionState::Update(
+    const lcmt_allegro_status& allegro_state_msg) {
   const lcmt_allegro_status status = allegro_state_msg;
 
   const double* ptr = &(status.joint_velocity_estimated[0]);
@@ -95,26 +99,26 @@ void AllegroHandState::Update(const lcmt_allegro_status& allegro_state_msg) {
   const Eigen::ArrayXd torque_command = Eigen::Map<const Eigen::ArrayXd>(
       &(status.joint_torque_commanded[0]), allegro_num_joints_);
 
-  is_joint_stuck = joint_velocity.abs() < velocity_thresh;
+  is_joint_stuck_ = joint_velocity.abs() < velocity_thresh_;
 
   // Detect whether the joint is moving in the opposite direction of the
   // command. If yes, it is most likely the joint is stuck.
   Eigen::Array<bool, Eigen::Dynamic, 1> motor_reverse =
       (joint_velocity * torque_command) < -0.001;
-  is_joint_stuck += motor_reverse;
+  is_joint_stuck_ += motor_reverse;
 
-  is_finger_stuck.setZero();
-  if (is_joint_stuck.segment<4>(0).all()) is_finger_stuck(0) = true;
-  if (is_joint_stuck.segment<3>(5).all()) is_finger_stuck(1) = true;
-  if (is_joint_stuck.segment<3>(9).all()) is_finger_stuck(2) = true;
-  if (is_joint_stuck.segment<3>(13).all()) is_finger_stuck(3) = true;
+  is_finger_stuck_.setZero();
+  if (is_joint_stuck_.segment<4>(0).all()) is_finger_stuck_(0) = true;
+  if (is_joint_stuck_.segment<3>(5).all()) is_finger_stuck_(1) = true;
+  if (is_joint_stuck_.segment<3>(9).all()) is_finger_stuck_(2) = true;
+  if (is_joint_stuck_.segment<3>(13).all()) is_finger_stuck_(3) = true;
 
-  if (motor_reverse.segment<3>(5).any()) is_finger_stuck(1) = true;
-  if (motor_reverse.segment<3>(9).any()) is_finger_stuck(2) = true;
-  if (motor_reverse.segment<3>(13).any()) is_finger_stuck(3) = true;
+  if (motor_reverse.segment<3>(5).any()) is_finger_stuck_(1) = true;
+  if (motor_reverse.segment<3>(9).any()) is_finger_stuck_(2) = true;
+  if (motor_reverse.segment<3>(13).any()) is_finger_stuck_(3) = true;
 }
 
-Eigen::Vector4d AllegroHandState::FingerGraspJointPosition(
+Eigen::Vector4d AllegroHandMotionState::FingerGraspJointPosition(
     int finger_index) const {
   Eigen::Vector4d position;
   // The numbers corresponds to the joint positions when the hand grasps a
@@ -132,7 +136,7 @@ Eigen::Vector4d AllegroHandState::FingerGraspJointPosition(
   return position;
 }
 
-Eigen::Vector4d AllegroHandState::FingerOpenJointPosition(
+Eigen::Vector4d AllegroHandMotionState::FingerOpenJointPosition(
     int finger_index) const {
   Eigen::Vector4d position;
   // The preset postion of the joints when the hand is open. The thumb joints
